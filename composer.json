@@ -1,0 +1,22 @@
+{
+    "name":"php-crond",
+    "description": "php-crond",
+    "authors":[
+        {"name":"lizhibin"}
+    ],
+    "require": {
+        "php":">=5.4.0",
+        "monolog/monolog":"1.22.1"
+    },
+    "autoload":{
+        "psr-0":{
+            "Crond\\" : "lib/"
+        }
+    },
+    "repositories": {
+        "packagist": {
+            "type": "composer",
+            "url": "https://packagist.phpcomposer.com"
+        }
+    }
+}
