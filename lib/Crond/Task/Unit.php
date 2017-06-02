@@ -116,23 +116,25 @@ class Unit
     {
         $timeArr = ['execSecond', 'execMintue', 'execHour', 'execDay', 'execMonth', 'execWeek'];
         foreach ($timeArr as $time) {
+            $nowTime = intval($$time);
+            $configTime = $this->$time;
             //任务设置为*，通过
-            if ($this->$time === '*') {
+            if ($configTime === '*') {
                 continue;
             }
             //任务设置为*/n
-            if (\preg_match("/^\*\/(\d+)$/", $this->$time, $matches) === 1) {
-                if ($$time % $matches[1] != 0) {
-                    return false;
-                } else {
+            if (\preg_match("/^\*\/(\d+)$/", $configTime, $matches) === 1) {
+                if ($nowTime % $matches[1] === 0) {
                     continue;
+                } else {
+                    return false;
                 }
             }
             //任务设置为数字
-            if ($this->$time != $$time) {
-                return false;
-            } else {
+            if (intval($configTime) === $nowTime) {
                 continue;
+            } else {
+                return false;
             }
         }
         return true;

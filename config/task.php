@@ -12,7 +12,7 @@
 
 return [
     'process_a' => [
-        'daemon' => '*/5 * * * * *',
+        'daemon' => '*/3 * * * * *',
         'filename' => '/usr/local/php-5.6.30/bin/php',
         'params' => ['/www/tests/pcntl/examples/a.php'],
         'single' => true

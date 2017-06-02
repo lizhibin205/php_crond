@@ -54,14 +54,14 @@ class Main
         $logger->pushHandler(new \Monolog\Handler\StreamHandler($crondConfig['log_file'], \Monolog\Logger::INFO));
 
         //主进程循环执行任务
-        while ($crondTaskMain->running) {
-            $startTime = \microtime(true);
+        $loop = \React\EventLoop\Factory::create();
+        $loop->addPeriodicTimer(1, function($timer) use ($crondTaskMain, $logger, $loop){
             list($execSecond, $execMintue, $execHour, $execDay, $execMonth, $execWeek) = \explode(' ', date("s i H d m w"));
-            //echo "run...{$execSecond} {$execMintue} {$execHour} {$execDay} {$execMonth} {$execWeek}", PHP_EOL;
             //执行及具体任务
             $taskList = Config::find($execSecond, $execMintue, $execHour, $execDay, $execMonth, $execWeek);
             foreach ($taskList as $task) {
-                if ($task->isSingle() && $crondTaskMain->checkTaskExists($task->getTaskName()) === self::TASK_EXEC) {
+                if ($task->isSingle() && $crondTaskMain->checkTaskExists($task->getTaskName()) === Main::TASK_EXEC) {
+                    echo $task->getTaskName() . ' is running', PHP_EOL;
                     continue;
                 }
 
@@ -80,13 +80,16 @@ class Main
                     $crondTaskMain->markTask($task->getTaskName(), $childPid);
                 }
             }
-            $endTime = \microtime(true);
             //执行具体任务结束
             //信号处理
             pcntl_signal_dispatch();
             //信号处理结束
-            usleep(1000000 - ($endTime - $startTime) * 1000000);
-        }
+            if (!Main::getInstance()->alive()) {
+                $loop->cancelTimer($timer);
+            }
+        });
+        $loop->run();
+        //主进程循环执行任务结束
 
         //等待所有子进程结束，结束进程
         while (count($crondTaskMain->statusList) > 0) {
@@ -118,6 +121,15 @@ class Main
             self::$main = new self();
         }
         return self::$main;
+    }
+
+    /**
+     * 返回任务的执行状态
+     * @return bool 如果正在执行，返回true，否则返回false
+     */
+    public function alive()
+    {
+        return $this->running;
     }
 
     /**
@@ -166,8 +178,8 @@ class Main
             return self::TASK_NONE;
         }
 
-        $childSignal = \pcntl_waitpid($taskInfo['pid'], $status, WNOHANG | WUNTRACED);
-        if ($childSignal == -1 || \pcntl_wifstopped ($status)) {
+        $childSignal = \pcntl_waitpid($taskInfo['pid'], $status, WNOHANG);
+        if ($childSignal == -1 || \pcntl_wifexited ($status)) {
             unset($this->statusList[$taskName]);
             return self::TASK_NONE;
         } else {
