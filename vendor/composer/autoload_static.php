@@ -7,6 +7,10 @@ namespace Composer\Autoload;
 class ComposerStaticInit404a5131073371601681b4e69e0647ce
 {
     public static $prefixLengthsPsr4 = array (
+        'R' => 
+        array (
+            'React\\EventLoop\\' => 16,
+        ),
         'P' => 
         array (
             'Psr\\Log\\' => 8,
@@ -18,6 +22,10 @@ class ComposerStaticInit404a5131073371601681b4e69e0647ce
     );
 
     public static $prefixDirsPsr4 = array (
+        'React\\EventLoop\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/react/event-loop/src',
+        ),
         'Psr\\Log\\' => 
         array (
             0 => __DIR__ . '/..' . '/psr/log/Psr/Log',
