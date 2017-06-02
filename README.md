@@ -11,9 +11,16 @@ php_crontab
 
 执行
 ---------------
+启动crond
 ```shell
 php bin/crond.php
 ```
+发送USR1信号，安全关闭crond
+主进程会等待所有的子进程任务结束，才会正式退出
+```shell
+kill -USR1 `cat logs/crond.pid`
+```
+
 
 配置
 ---------------
