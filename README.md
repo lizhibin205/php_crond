@@ -15,6 +15,11 @@ php_crontab
 ```shell
 php bin/crond.php
 ```
+在后台启动crond
+```shell
+nohup php bin/crond.php > /dev/null 2>&1 &
+```
+
 发送USR1信号，安全关闭crond
 主进程会等待所有的子进程任务结束，才会正式退出
 ```shell
