@@ -53,6 +53,8 @@ class Main
         $logger = new \Monolog\Logger('crond');
         $logger->pushHandler(new \Monolog\Handler\StreamHandler($crondConfig['log_file'], \Monolog\Logger::INFO));
 
+        //程序开始记录日志
+        $logger->info("php_crond start");
         //主进程循环执行任务
         $loop = \React\EventLoop\Factory::create();
         $loop->addPeriodicTimer(1, function($timer) use ($crondTaskMain, $logger, $loop){
@@ -61,7 +63,7 @@ class Main
             $taskList = Config::find($execSecond, $execMintue, $execHour, $execDay, $execMonth, $execWeek);
             foreach ($taskList as $task) {
                 if ($task->isSingle() && $crondTaskMain->checkTaskExists($task->getTaskName()) === Main::TASK_EXEC) {
-                    echo $task->getTaskName() . ' is running', PHP_EOL;
+                    $logger->info($task->getTaskName() . "is running");
                     continue;
                 }
 
@@ -76,7 +78,7 @@ class Main
                     \pcntl_exec($filename, $params);
                 } else {
                     //父进程标识进程执行状态
-                    $logger->info("run task " . $task->getTaskName());
+                    $logger->info("start task " . $task->getTaskName());
                     $crondTaskMain->markTask($task->getTaskName(), $childPid);
                 }
             }
