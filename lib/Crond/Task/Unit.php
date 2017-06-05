@@ -155,7 +155,7 @@ class Unit
      */
     public function getTaskName()
     {
-        return $this->taskName;
+        return $this->single ? $this->taskName : $this->taskName . time();
     }
 
     /**
