@@ -6,7 +6,7 @@ php_crontab
 ---------------
 + 通过配置文件管理所有定时任务
 + 支持秒级的定时任务粒度
-+ 多进程执行任务
++ 使用symfony/process进行进程管理
 + 使用React/event-loop执行事件循环
 
 执行
@@ -39,14 +39,19 @@ kill -USR1 `cat logs/crond.pid`
  *      'filename' => '/usr/local/php/bin/php', //执行程序
  *      'params' => [],//执行程序参数
  *      'single' => true,//如果进程在运行，则不执行，只保持一个进程
+ *      'standard_ouput' => '', //标准输出
+ *      'error_output' => '', // 错误输出
  *  ]
  */
+
 return [
     'process_a' => [
-        'daemon' => '*/5 * * * * *',
+        'daemon' => '*/3 * * * * *',
         'filename' => '/usr/local/php-5.6.30/bin/php',
         'params' => ['/www/tests/pcntl/examples/a.php'],
-        'single' => true
+        'single' => true,
+        'standard_ouput' => '/www/tests/pcntl/examples/a.log',
+        'error_output' => '/www/tests/pcntl/examples/a.log',
     ]
 ];
 ```
