@@ -29,6 +29,7 @@ class Config
             list($execSecond, $execMintue, $execHour, $execDay, $execMonth, $execWeek) = \explode(' ', $task['daemon']);
             $unit = new Unit($taskName, $task['filename'], $task['params'], $execSecond, $execMintue, $execHour, $execDay, $execMonth, $execWeek);
             $unit->setSingle($task['single']);
+            $unit->setOuput($task['standard_ouput'], $task['error_output']);
             self::$taskData[] = $unit;
         }
     }

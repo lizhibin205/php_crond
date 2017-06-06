@@ -7,6 +7,10 @@ namespace Composer\Autoload;
 class ComposerStaticInit404a5131073371601681b4e69e0647ce
 {
     public static $prefixLengthsPsr4 = array (
+        'S' => 
+        array (
+            'Symfony\\Component\\Process\\' => 26,
+        ),
         'R' => 
         array (
             'React\\EventLoop\\' => 16,
@@ -22,6 +26,10 @@ class ComposerStaticInit404a5131073371601681b4e69e0647ce
     );
 
     public static $prefixDirsPsr4 = array (
+        'Symfony\\Component\\Process\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/symfony/process',
+        ),
         'React\\EventLoop\\' => 
         array (
             0 => __DIR__ . '/..' . '/react/event-loop/src',

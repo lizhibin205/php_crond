@@ -69,6 +69,18 @@ class Unit
     private $single = false;
 
     /**
+     * 标准输出路径
+     * @var string
+     */
+    private $stdout = null;
+
+    /**
+     * 错误输出路径
+     * @var string
+     */
+    private $stderr = null;
+
+    /**
      * 构造函数
      * @param string $taskName 任务唯一标识
      * @param stirng $filename 执行程序路径
@@ -100,6 +112,17 @@ class Unit
     public function setSingle($single)
     {
         $this->single = $single;
+    }
+
+    /**
+     * 设置任务的的标准输出和错误输出
+     * @param string $stdout 标准输出路径
+     * @param string $stderr 错误输出路径
+     */
+    public function setOuput($stdout = null, $stderr = null)
+    {
+        $this->stdout = $stdout;
+        $this->stderr = $stderr;
     }
 
     /**
@@ -155,6 +178,15 @@ class Unit
      */
     public function getTaskName()
     {
+        return $this->taskName;
+    }
+
+    /**
+     * 获取任务的唯一名称
+     * @return string
+     */
+    public function getUniqTaskName()
+    {
         return $this->single ? $this->taskName : $this->taskName . time();
     }
 
@@ -165,5 +197,23 @@ class Unit
     public function isSingle()
     {
         return $this->single;
+    }
+
+    /**
+     * 获取标准输出路径
+     * @return string
+     */
+    public function getStdout()
+    {
+        return is_null($this->stdout) ? '/dev/null' : $this->stdout;
+    }
+
+    /**
+     * 获取错误输出路径
+     * @return string
+     */
+    public function getStderr()
+    {
+        return is_null($this->stderr) ? '/dev/null' : $this->stderr;
     }
 }

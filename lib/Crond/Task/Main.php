@@ -1,6 +1,8 @@
 <?php
 namespace Crond\Task;
 
+use \Symfony\Component\Process\Process;
+
 class Main
 {
     /**
@@ -25,7 +27,7 @@ class Main
      * 进程执行列表
      * @var array
      */
-    private $statusList = [];
+    private $processList = [];
 
     /**
      * 定时任务执行状态
@@ -62,25 +64,27 @@ class Main
             //执行及具体任务
             $taskList = Config::find($execSecond, $execMintue, $execHour, $execDay, $execMonth, $execWeek);
             foreach ($taskList as $task) {
-                if ($task->isSingle() && $crondTaskMain->checkTaskExists($task->getTaskName()) === Main::TASK_EXEC) {
-                    $logger->info($task->getTaskName() . "is running");
+                //获取任务的唯一名称
+                $taskUniqName = $task->getUniqTaskName();
+
+                //判断是否single的任务
+                if ($task->isSingle() && $crondTaskMain->checkProcess($taskUniqName) === Main::TASK_EXEC) {
+                    $logger->info($task->getTaskName() . " is running");
                     continue;
                 }
 
-                //fork进程，执行任务
-                $childPid = \pcntl_fork();
-                if ($childPid == -1) {
-                    throw new \RuntimeException("Can't fork child process!");
-                }
-                //子进程执行任务
-                if ($childPid == 0) {
-                    list($filename, $params) = $task->getExec();
-                    \pcntl_exec($filename, $params);
-                } else {
-                    //父进程标识进程执行状态
-                    $logger->info("start task " . $task->getTaskName());
-                    $crondTaskMain->markTask($task->getTaskName(), $childPid);
-                }
+                list($processFilename, $params) = $task->getExec();
+                $process = new Process("{$processFilename} " . \implode(' ', $params));
+                $process->start(function ($type, $buffer) use($task) {
+                    if ($type === Process::ERR) {
+                        $filename = $task->getStderr();
+                    } else {
+                        $filename = $task->getStdout();
+                    }
+                    \file_put_contents($filename, $buffer, FILE_APPEND);
+                });
+                $logger->info($task->getTaskName() . " start");
+                $crondTaskMain->markProcess($taskUniqName, $process);
             }
             //执行具体任务结束
             //信号处理
@@ -94,12 +98,7 @@ class Main
         //主进程循环执行任务结束
 
         //等待所有子进程结束，结束进程
-        while (count($crondTaskMain->statusList) > 0) {
-            foreach ($crondTaskMain->statusList as $taskName => $taskInfo) {
-                if ($crondTaskMain->checkTaskExists($taskName) === self::TASK_EXEC) {
-                    break;
-                }
-            }
+        while ($crondTaskMain->isTasksAlive()) {
             sleep(1);
         }
     }
@@ -135,6 +134,20 @@ class Main
     }
 
     /**
+     * 检测是否有任务在执行
+     * @return bool 如果有任务执行，返回true，否则返回false
+     */
+    public function isTasksAlive()
+    {
+        foreach ($this->processList as $process) {
+            if ($process->isRunning()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * 创建pid文件
      * @return void
      */
@@ -157,35 +170,30 @@ class Main
 
     /**
      * 记录任务执行状态
-     * @param string $taskName 任务名称
+     * @param string $taskUniqName 任务唯一名称
      * @param int $childPid 进程ID
      */
-    private function markTask($taskName, $childPid)
+    private function markProcess($taskUniqName, Process $process)
     {
-        $this->statusList[$taskName] = [
-            'pid' => $childPid,
-            'exec_time' => time()
-        ];
+        $this->processList[$taskUniqName] = $process;
     }
 
     /**
      * 检查任务执行状态
-     * @param string $taskName 任务名称
+     * @param string $taskUniqName 任务唯一名称
      * @return int 任务状态
      */
-    private function checkTaskExists($taskName)
+    private function checkProcess($taskUniqName)
     {
-        $taskInfo = isset($this->statusList[$taskName]) ? $this->statusList[$taskName] : null;
-        if (\is_null($taskInfo)) {
+        if (!isset($this->processList[$taskUniqName])) {
             return self::TASK_NONE;
         }
-
-        $childSignal = \pcntl_waitpid($taskInfo['pid'], $status, WNOHANG);
-        if ($childSignal == -1 || \pcntl_wifexited ($status)) {
-            unset($this->statusList[$taskName]);
-            return self::TASK_NONE;
-        } else {
+        $process = $this->processList[$taskUniqName];
+        if ($process->isRunning()) {
             return self::TASK_EXEC;
+        } else {
+            unset($this->processList[$taskUniqName]);
+            return self::TASK_NONE;
         }
     }
 }
