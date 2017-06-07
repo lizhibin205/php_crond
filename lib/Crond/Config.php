@@ -12,23 +12,36 @@ class Config
      * 数据配置
      * @var array
      */
-    private static $configData = [];
+    private static $configData = null;
+
+    /**
+     * 获取php_crond配置
+     * @param string $name 属性名
+     */
+    public static function attr($name)
+    {
+        if (is_null(self::$configData)) {
+            self::$configData = self::getConfig();
+        }
+        if (isset(self::$configData[$name])) {
+            return self::$configData[$name];
+        } else {
+            throw new \RuntimeException("php_crond base config[{$name}] not exists!");
+        }
+    }
 
     /**
      * 获取配置文件中的内容
-     * @param string $name
-     * @return mixed|null 返回配置文件的信息，如果文件不存在，则返回null
+     * @throws \RuntimeException
+     * @return void
      */
-    public static function getConfig($name)
+    private static function getConfig()
     {
-        if (isset(self::$configData[$name])) {
-            return self::$configData[$name];
-        }
-        $filename = PROJECT_ROOT . "/config/{$name}.php";
+        $filename = PROJECT_ROOT . "/config/base.php";
         if (is_file($filename)) {
-            return self::$configData[$name] = include $filename;
+            return include $filename;
         } else {
-            return null;
+            throw new \RuntimeException("php_crond base config file not exists!");
         }
     }
 }

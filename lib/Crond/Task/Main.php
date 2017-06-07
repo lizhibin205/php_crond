@@ -49,11 +49,10 @@ class Main
         //初始化进程管理类
         $crondTaskMain = self::getInstance();
         //创建PID文件
-        $crondTaskMain->createPidFile();
+        $crondTaskMain->createPidFile(\Crond\Config::attr('pid_file'));
         //日志记录器
-        $crondConfig = \Crond\Config::getConfig('base');
         $logger = new \Monolog\Logger('crond');
-        $logger->pushHandler(new \Monolog\Handler\StreamHandler($crondConfig['log_file'], \Monolog\Logger::INFO));
+        $logger->pushHandler(new \Monolog\Handler\StreamHandler(\Crond\Config::attr('log_file'), \Monolog\Logger::INFO));
 
         //程序开始记录日志
         $logger->info("php_crond start");
@@ -149,11 +148,12 @@ class Main
 
     /**
      * 创建pid文件
+     * @param string $pidFileName pid文件路径
+     * @throws \RuntimeException
      * @return void
      */
-    private function createPidFile()
+    private function createPidFile($pidFileName)
     {
-        $pidFileName = PROJECT_ROOT . "/logs/crond.pid";
         if (\is_file($pidFileName)) {
             throw new \RuntimeException("pid file is exists, check the crond php is running or not!");
         }
