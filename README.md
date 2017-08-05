@@ -26,6 +26,11 @@ nohup php bin/crond.php > /dev/null 2>&1 &
 kill -USR1 `cat logs/crond.pid`
 ```
 
+发送USR2信号，重新读取task配置文件
+```shell
+kill -USR2 `cat logs/crond.pid`
+```
+
 
 配置
 ---------------
