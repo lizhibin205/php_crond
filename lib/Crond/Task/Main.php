@@ -53,6 +53,10 @@ class Main
         //日志记录器
         $logger = new \Monolog\Logger('crond');
         $logger->pushHandler(new \Monolog\Handler\StreamHandler(\Crond\Config::attr('log_file'), \Monolog\Logger::INFO));
+        //HTTP启动
+        if (\Crond\Config::attr('http_server')['switch'] === true) {
+            $http = new Process(\Crond\Config::attr('php') . " " . PROJECT_ROOT . "/bin/http.php");
+        }
 
         //程序开始记录日志
         $logger->info("php_crond start");
