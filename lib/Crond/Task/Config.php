@@ -35,6 +35,16 @@ class Config
     }
 
     /**
+     * 重新加载task的任务配置
+     * @return void
+     */
+    public static function reload()
+    {
+        self::$taskData = [];
+        self::read();
+    }
+
+    /**
      * 查找需要执行的任务
      * @param int $execSecond 执行的秒
      * @param int $execMintue 执行的分钟

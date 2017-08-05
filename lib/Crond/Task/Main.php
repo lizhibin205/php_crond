@@ -112,6 +112,15 @@ class Main
     }
 
     /**
+     * 重新加载任务配置文件
+     * @return void
+     */
+    public static function reloadTask()
+    {
+        Config::reload();
+    }
+
+    /**
      * 初始化定时任务对象实例
      * @return Main
      */

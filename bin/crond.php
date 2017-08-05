@@ -21,10 +21,15 @@ define('PROJECT_ROOT', dirname(__DIR__));
 require __DIR__ . "/../vendor/autoload.php";
 
 //注册信号函数
-//用于安全关闭任务
-$result = Signal::register(SIGUSR1, function($signal){
+//用于安全关闭任务-USR1
+Signal::register(SIGUSR1, function($signal){
     echo "please wait, shuting down the crond...", PHP_EOL;
     Main::shutdown();
+});
+//用户重载配置文件-USR2
+Signal::register(SIGUSR2, function($signal){
+    echo "reload task config...", PHP_EOL;
+    Main::reloadTask();
 });
 
 Main::start();
