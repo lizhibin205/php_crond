@@ -7,7 +7,7 @@ class Status
 
     /**
      * 返回php_crond的执行状态
-     * @return string 
+     * @return mixeds 
      */
     public function index()
     {
@@ -15,6 +15,6 @@ class Status
             'pid_file' => file_get_contents(\Crond\Config::attr('pid_file')),
             'task_list' => \Crond\Task\Config::getTaskList()
         ];
-        return json_encode($result);
+        return $result;
     }
 }
