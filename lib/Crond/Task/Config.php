@@ -20,11 +20,7 @@ class Config
      */
     public static function read()
     {
-        $configFilename = PROJECT_ROOT . "/config/task.php";
-        if (!is_file($configFilename)) {
-            return ;
-        }
-        $configTaskList = include $configFilename;
+        $configTaskList = self::getTaskList();
         foreach ($configTaskList as $taskName => $task) {
             list($execSecond, $execMintue, $execHour, $execDay, $execMonth, $execWeek) = \explode(' ', $task['daemon']);
             $unit = new Unit($taskName, $task['filename'], $task['params'], $execSecond, $execMintue, $execHour, $execDay, $execMonth, $execWeek);
@@ -60,6 +56,20 @@ class Config
             if ($task->match($execSecond, $execMintue, $execHour, $execDay, $execMonth, $execWeek)) {
                 yield $task;
             }
+        }
+    }
+
+    /**
+     * 获取任务配置文件的数据
+     * return array
+     */
+    public static function getTaskList()
+    {
+        $configFilename = PROJECT_ROOT . "/config/task.php";
+        if (!is_file($configFilename)) {
+            return [];
+        } else {
+            return include $configFilename;
         }
     }
 }
