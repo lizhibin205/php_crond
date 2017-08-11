@@ -31,8 +31,29 @@ kill -USR1 `cat logs/crond.pid`
 kill -USR2 `cat logs/crond.pid`
 ```
 
+基本配置
+---------------
+服务配置文件config/base.php
+```php
+return [
+    //模式
+    'model' => 'daemon',
+    //PHP程序路径
+    'php' => '/usr/local/php-5.6.30/bin/php',
+    //日志文件
+    'log_file' => PROJECT_ROOT . "/logs/crond.log",
+    //主进程pid文件
+    'pid_file' => PROJECT_ROOT . "/logs/crond.pid",
+    //http接口服务，提供接口远程操作php_crond
+    'http_server' => [
+        'switch' => false,
+        'listen' => '127.0.0.1',
+        'port' => 8080,
+    ],
+];
+```
 
-配置
+任务配置
 ---------------
 任务配置文件config/task.php
 ```php
