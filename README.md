@@ -8,6 +8,7 @@ php_crontab
 + 支持秒级的定时任务粒度
 + 使用symfony/process进行进程管理
 + 使用React/event-loop执行事件循环
++ 提供http服务，远程查看和操作php_crond
 
 执行
 ---------------
@@ -46,9 +47,9 @@ return [
     'pid_file' => PROJECT_ROOT . "/logs/crond.pid",
     //http接口服务，提供接口远程操作php_crond
     'http_server' => [
-        'switch' => false,
+        'switch' => false,//是否启动http服务
         'listen' => '127.0.0.1',
-        'port' => 8080,
+        'port' => 8080,//监听端口
     ],
 ];
 ```
