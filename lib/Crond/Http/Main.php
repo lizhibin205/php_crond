@@ -26,7 +26,7 @@ class Main
 
             if (class_exists($className) && method_exists($className, $a)) {
                 try {
-                    $data = (new $className())->$a();
+                    $data = (new $className($request))->$a();
                     $output = json_encode([
                         'code' => 200,
                         'msg' => 'done',
