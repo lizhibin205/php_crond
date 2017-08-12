@@ -1,7 +1,7 @@
 <?php
 namespace Crond\Http;
 
-class Opt
+final class Opt extends Controller
 {
     /**
      * 安全关闭php_crond服务
@@ -39,5 +39,23 @@ class Opt
                 'msg' => 'error: pid file lost!'
             ];
         }
+    }
+
+    /**
+     * 添加计划任务
+     * @return array
+     */
+    public function add()
+    {
+        
+    }
+
+    /**
+     * 移除任务
+     * @return array
+     */
+    public function remove()
+    {
+        
     }
 }

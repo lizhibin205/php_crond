@@ -1,7 +1,7 @@
 <?php
 namespace Crond\Http;
 
-class Status
+final class Status extends Controller
 {
     public function __construct(){}
 
