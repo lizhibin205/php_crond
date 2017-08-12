@@ -72,4 +72,33 @@ class Config
             return include $configFilename;
         }
     }
+
+    /**
+     * 添加任务
+     * @param string $taskName 任务名称
+     * @param array $task 任务参数
+     * @throws \RuntimeException
+     * @return void
+     */
+    public static function addTask($taskName, $task)
+    {
+        $httpConfig = \Crond\Config::attr("http_server");
+        if (!isset($httpConfig['cache_dir']) || !is_dir($httpConfig['cache_dir'])) {
+            throw new \RuntimeException("error:cache dir not exists!");
+        }
+        $cacheDir = $httpConfig['cache_dir'];
+
+        if (preg_match("/^[A-Za-z0-9_]+$/", $taskName) === 0) {
+            throw new \RuntimeException("error:{$taskName} contain special char(allow A-Z,a-z,0-9, and _)!");
+        }
+
+        $taskFile = "{$cacheDir}/{$taskName}.json";
+        if (is_file($taskFile)) {
+            throw new \RuntimeException("error:{$taskName} already exists!");
+        }
+
+        if (file_put_contents($taskFile, json_encode($task))) {
+            throw new \RuntimeException("error:save task[{$taskName}] failure!");
+        }
+    }
 }
