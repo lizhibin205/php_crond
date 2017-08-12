@@ -89,16 +89,39 @@ class Config
         $cacheDir = $httpConfig['cache_dir'];
 
         if (preg_match("/^[A-Za-z0-9_]+$/", $taskName) === 0) {
-            throw new \RuntimeException("error:{$taskName} contain special char(allow A-Z,a-z,0-9, and _)!");
+            throw new \RuntimeException("{$taskName} contain special char(allow A-Z,a-z,0-9, and _)!");
         }
 
         $taskFile = "{$cacheDir}/{$taskName}.json";
         if (is_file($taskFile)) {
-            throw new \RuntimeException("error:{$taskName} already exists!");
+            throw new \RuntimeException("{$taskName} already exists!");
         }
 
-        if (file_put_contents($taskFile, json_encode($task))) {
-            throw new \RuntimeException("error:save task[{$taskName}] failure!");
+        if (file_put_contents($taskFile, json_encode($task)) === false) {
+            throw new \RuntimeException("save task[{$taskName}] failure!");
+        }
+    }
+
+    /**
+     * 移除任务
+     * @param string $taskName
+     * @throws \RuntimeException
+     */
+    public static function removeTask($taskName)
+    {
+        $httpConfig = \Crond\Config::attr("http_server");
+        if (!isset($httpConfig['cache_dir']) || !is_dir($httpConfig['cache_dir'])) {
+            throw new \RuntimeException("error:cache dir not exists!");
+        }
+        $cacheDir = $httpConfig['cache_dir'];
+
+        if (preg_match("/^[A-Za-z0-9_]+$/", $taskName) === 0) {
+            throw new \RuntimeException("{$taskName} contain special char(allow A-Z,a-z,0-9, and _)!");
+        }
+
+        $taskFile = "{$cacheDir}/{$taskName}.json";
+        if (!unlink($taskFile)) {
+            throw new \RuntimeException("remove task[{$taskName}] failure!");
         }
     }
 }

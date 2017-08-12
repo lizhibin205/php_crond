@@ -57,7 +57,6 @@ final class Opt extends Controller
             ];
         }
 
-
         $postParams = $this->request->getParsedBody();
         $taskName = $postParams['task_name'];
         $task = [
@@ -82,7 +81,6 @@ final class Opt extends Controller
                 'msg' => "error: ". $ex->getMessage()
                 ];
         }
-
     }
 
     /**
@@ -91,6 +89,14 @@ final class Opt extends Controller
      */
     public function remove()
     {
-        
+        $taskName = $this->request->getQueryParams()['task_name'];
+        try {
+            \Crond\Task\Config::removeTask($taskName);
+        } catch (\RuntimeException $ex) {
+            return [
+                'code' => -1,
+                'msg' => "error: ". $ex->getMessage()
+            ];
+        }
     }
 }
