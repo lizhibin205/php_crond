@@ -42,7 +42,7 @@ class Main
             } else {
                 $output = json_encode([
                     'code' => 404,
-                    'msg' => 'method is not exists!',
+                    'msg' => "method[{$c}-{$a}] is not exists!",
                     'data' => null,
                 ]);
             }
