@@ -118,6 +118,15 @@ class Main
     }
 
     /**
+     * 获取php_crond的pid
+     * return string 返回php_crond的pid
+     */
+    public static function getPid()
+    {
+        return file_get_contents(\Crond\Config::attr('pid_file'));
+    }
+
+    /**
      * 重新加载任务配置文件
      * @return void
      */
