@@ -65,12 +65,17 @@ class Config
      */
     public static function getTaskList()
     {
+        //总的任务列表
+        $allTaskList = [];
+
         $configFilename = PROJECT_ROOT . "/config/task.php";
-        if (!is_file($configFilename)) {
-            return [];
-        } else {
-            return include $configFilename;
+        if (is_file($configFilename)) {
+            $allTaskList = array_merge($allTaskList, include $configFilename);
         }
+
+        $allTaskList = array_merge($allTaskList, self::getApiTask());
+
+        return $allTaskList;
     }
 
     /**
@@ -123,5 +128,31 @@ class Config
         if (!unlink($taskFile)) {
             throw new \RuntimeException("remove task[{$taskName}] failure!");
         }
+    }
+
+    /**
+     * 读取由api接口生成的任务
+     * return array
+     */
+    private static function getApiTask()
+    {
+        $apiTasks = [];
+        $httpConfig = \Crond\Config::attr("http_server");
+        if (!isset($httpConfig['cache_dir']) || !is_dir($httpConfig['cache_dir'])) {
+            return $apiTasks;
+        }
+        $cacheDir = $httpConfig['cache_dir'];
+
+        //遍历api目录
+        foreach (new \FilesystemIterator($cacheDir) as $file) {
+            if ($file->getExtension() === 'json') {
+                $taskData = json_decode(file_get_contents($file->getFilename()), true);
+                if (is_array($taskData)) {
+                    $apiTasks[] = $taskData;
+                }
+            }
+        }
+
+        return $apiTasks;
     }
 }
