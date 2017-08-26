@@ -148,7 +148,8 @@ class Config
             if ($file->getExtension() === 'json') {
                 $taskData = json_decode(file_get_contents($file), true);
                 if (is_array($taskData)) {
-                    $apiTasks[] = $taskData;
+                    $taskName = $file->getBasename(".json");
+                    $apiTasks[$taskName] = $taskData;
                 }
             }
         }
