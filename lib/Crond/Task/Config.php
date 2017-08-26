@@ -146,7 +146,7 @@ class Config
         //遍历api目录
         foreach (new \FilesystemIterator($cacheDir) as $file) {
             if ($file->getExtension() === 'json') {
-                $taskData = json_decode(file_get_contents($file->getFilename()), true);
+                $taskData = json_decode(file_get_contents($file), true);
                 if (is_array($taskData)) {
                     $apiTasks[] = $taskData;
                 }
