@@ -69,18 +69,12 @@ final class Opt extends Controller
         ];
 
         //写入添加文件
-        try {
-            \Crond\Task\Config::addTask($taskName, $task);
-            return [
-                'code' => 1,
-                'msg' => "add task[{$taskName}] success!"
-                ];
-        } catch (\RuntimeException $ex) {
-            return [
-                'code' => -1,
-                'msg' => "error: ". $ex->getMessage()
-                ];
-        }
+        \Crond\Task\Config::addTask($taskName, $task);
+        return [
+            'code' => 1,
+            'msg' => "add task[{$taskName}] success!"
+        ];
+
     }
 
     /**
@@ -90,13 +84,6 @@ final class Opt extends Controller
     public function remove()
     {
         $taskName = $this->request->getQueryParams()['task_name'];
-        try {
-            \Crond\Task\Config::removeTask($taskName);
-        } catch (\RuntimeException $ex) {
-            return [
-                'code' => -1,
-                'msg' => "error: ". $ex->getMessage()
-            ];
-        }
+        \Crond\Task\Config::removeTask($taskName);
     }
 }
