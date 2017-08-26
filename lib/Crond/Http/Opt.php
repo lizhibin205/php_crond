@@ -49,23 +49,15 @@ final class Opt extends Controller
      */
     public function add()
     {
-        //判断接口请求方式
-        if ($this->request->getMethod() !== "POST") {
-            return [
-                'code' => -1,
-                'msg' => 'error: bad request method!'
-            ];
-        }
-
-        $postParams = $this->request->getParsedBody();
-        $taskName = $postParams['task_name'];
+        $getParams = $this->request->getQueryParams();
+        $taskName = $getParams['task_name'];
         $task = [
-            'daemon' => $postParams['daemon'],
-            'filename' => $postParams['filename'],
-            'params' => is_array($postParams['params']) ? $postParams['params'] : [$postParams['params']],
-            'single' => $postParams['single'] === '1' ? true : false,
-            'standard_ouput' => $postParams['standard_ouput'],
-            'error_output' => $postParams['error_output'],
+            'daemon' => $getParams['daemon'],
+            'filename' => $getParams['filename'],
+            'params' => is_array($getParams['params']) ? $getParams['params'] : [$getParams['params']],
+            'single' => $getParams['single'] === '1' ? true : false,
+            'standard_ouput' => $getParams['standard_ouput'],
+            'error_output' => $getParams['error_output'],
         ];
 
         //写入添加文件
@@ -74,7 +66,6 @@ final class Opt extends Controller
             'code' => 1,
             'msg' => "add task[{$taskName}] success!"
         ];
-
     }
 
     /**
