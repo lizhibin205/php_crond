@@ -34,7 +34,7 @@ class Main
                     ]);
                 } catch (\RuntimeException $ex) {
                     $output = json_encode([
-                        'code' => $ex->getCode(),
+                        'code' => 500,
                         'msg' => $ex->getMessage(),
                         'data' => null,
                     ]);
