@@ -65,11 +65,95 @@ class Config
      */
     public static function getTaskList()
     {
+        //总的任务列表
+        $allTaskList = [];
+
         $configFilename = PROJECT_ROOT . "/config/task.php";
-        if (!is_file($configFilename)) {
-            return [];
-        } else {
-            return include $configFilename;
+        if (is_file($configFilename)) {
+            $allTaskList = array_merge($allTaskList, include $configFilename);
         }
+
+        $allTaskList = array_merge($allTaskList, self::getApiTask());
+
+        return $allTaskList;
+    }
+
+    /**
+     * 添加任务
+     * @param string $taskName 任务名称
+     * @param array $task 任务参数
+     * @throws \RuntimeException
+     * @return void
+     */
+    public static function addTask($taskName, $task)
+    {
+        $httpConfig = \Crond\Config::attr("http_server");
+        if (!isset($httpConfig['cache_dir']) || !is_dir($httpConfig['cache_dir'])) {
+            throw new \RuntimeException("error:cache dir not exists!");
+        }
+        $cacheDir = $httpConfig['cache_dir'];
+
+        if (preg_match("/^[A-Za-z0-9_]+$/", $taskName) === 0) {
+            throw new \RuntimeException("{$taskName} contain special char(allow A-Z,a-z,0-9, and _)!");
+        }
+
+        $taskFile = "{$cacheDir}/{$taskName}.json";
+        if (is_file($taskFile)) {
+            throw new \RuntimeException("{$taskName} already exists!");
+        }
+
+        if (file_put_contents($taskFile, json_encode($task)) === false) {
+            throw new \RuntimeException("save task[{$taskName}] failure!");
+        }
+    }
+
+    /**
+     * 移除任务
+     * @param string $taskName
+     * @throws \RuntimeException
+     */
+    public static function removeTask($taskName)
+    {
+        $httpConfig = \Crond\Config::attr("http_server");
+        if (!isset($httpConfig['cache_dir']) || !is_dir($httpConfig['cache_dir'])) {
+            throw new \RuntimeException("error:cache dir not exists!");
+        }
+        $cacheDir = $httpConfig['cache_dir'];
+
+        if (preg_match("/^[A-Za-z0-9_]+$/", $taskName) === 0) {
+            throw new \RuntimeException("{$taskName} contain special char(allow A-Z,a-z,0-9, and _)!");
+        }
+
+        $taskFile = "{$cacheDir}/{$taskName}.json";
+        if (!unlink($taskFile)) {
+            throw new \RuntimeException("remove task[{$taskName}] failure!");
+        }
+    }
+
+    /**
+     * 读取由api接口生成的任务
+     * return array
+     */
+    private static function getApiTask()
+    {
+        $apiTasks = [];
+        $httpConfig = \Crond\Config::attr("http_server");
+        if (!isset($httpConfig['cache_dir']) || !is_dir($httpConfig['cache_dir'])) {
+            return $apiTasks;
+        }
+        $cacheDir = $httpConfig['cache_dir'];
+
+        //遍历api目录
+        foreach (new \FilesystemIterator($cacheDir) as $file) {
+            if ($file->getExtension() === 'json') {
+                $taskData = json_decode(file_get_contents($file), true);
+                if (is_array($taskData)) {
+                    $taskName = $file->getBasename(".json");
+                    $apiTasks[$taskName] = $taskData;
+                }
+            }
+        }
+
+        return $apiTasks;
     }
 }

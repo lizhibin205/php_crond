@@ -8,7 +8,7 @@ php_crontab
 + 支持秒级的定时任务粒度
 + 使用symfony/process进行进程管理
 + 使用React/event-loop执行事件循环
-+ 提供http服务，远程查看和操作php_crond
++ 提供http服务，远程查看和操作php_crond（[参见：API文档](https://github.com/lizhibin205/php_crond/wiki/API%E6%8E%A5%E5%8F%A3%E6%96%87%E6%A1%A3)）
 
 执行
 ---------------

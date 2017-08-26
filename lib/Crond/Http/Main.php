@@ -26,7 +26,7 @@ class Main
 
             if (class_exists($className) && method_exists($className, $a)) {
                 try {
-                    $data = (new $className())->$a();
+                    $data = (new $className($request))->$a();
                     $output = json_encode([
                         'code' => 200,
                         'msg' => 'done',
@@ -34,7 +34,7 @@ class Main
                     ]);
                 } catch (\RuntimeException $ex) {
                     $output = json_encode([
-                        'code' => $ex->getCode(),
+                        'code' => 500,
                         'msg' => $ex->getMessage(),
                         'data' => null,
                     ]);
@@ -42,7 +42,7 @@ class Main
             } else {
                 $output = json_encode([
                     'code' => 404,
-                    'msg' => 'method is not exists!',
+                    'msg' => "method[{$c}-{$a}] is not exists!",
                     'data' => null,
                 ]);
             }
