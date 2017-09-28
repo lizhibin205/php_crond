@@ -82,3 +82,7 @@ return [
     ]
 ];
 ```
+如果你需要配置非常多的任务，可以使用Crond\Task\Directory::registerTaskDirectory，该方法会遍历注册目录下的所有.php文件，并返回其中的任务列表
+```php
+return Crond\Task\Directory::registerTaskDirectory(__DIR__ . "/tasks");
+```
