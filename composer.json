@@ -1,5 +1,5 @@
 {
-    "name":"php-crond",
+    "name":"lizhibin/php-crond",
     "description": "php-crond",
     "authors":[
         {"name":"lizhibin"}
