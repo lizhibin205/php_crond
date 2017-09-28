@@ -79,7 +79,8 @@ class Main
                 }
 
                 list($processFilename, $params) = $task->getExec();
-                $process = new Process("{$processFilename} " . \implode(' ', $params));
+                $processCommand = "{$processFilename} " . \implode(' ', $params);
+                $process = new Process($processCommand);
                 $process->start(function ($type, $buffer) use($task) {
                     if ($type === Process::ERR) {
                         $filename = $task->getStderr();
@@ -88,7 +89,7 @@ class Main
                     }
                     \file_put_contents($filename, $buffer, FILE_APPEND);
                 });
-                $logger->info($task->getTaskName() . " start");
+                $logger->info($task->getTaskName() . "[{$processCommand}] start");
                 $crondTaskMain->markProcess($taskUniqName, $process);
             }
             //执行具体任务结束
