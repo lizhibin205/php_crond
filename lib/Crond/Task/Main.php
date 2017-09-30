@@ -137,6 +137,18 @@ class Main
     }
 
     /**
+     * 处理子进程发送的SIGCHLD，防止僵尸进程
+     * @return void
+     */
+    public static function waitProcess()
+    {
+        $main = self::getInstance();
+        foreach ($main->processList as $process) {
+            $process->isTerminated();
+        }
+    }
+
+    /**
      * 初始化定时任务对象实例
      * @return Main
      */

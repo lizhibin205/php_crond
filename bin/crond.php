@@ -31,5 +31,9 @@ Signal::register(SIGUSR2, function($signal){
     echo "reload task config...", PHP_EOL;
     Main::reloadTask();
 });
+//接收子进程结束的信号
+Signal::register(SIGCHLD, function(){
+    Main::waitProcess();
+});
 
 Main::start();
