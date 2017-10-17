@@ -58,7 +58,7 @@ final class Opt extends Controller
             'filename' => $getParams['filename'],
             'params' => explode(' ', $params),
             'single' => $getParams['single'] === '1' ? true : false,
-            'standard_ouput' => $getParams['standard_ouput'],
+            'standard_output' => $getParams['standard_output'],
             'error_output' => $getParams['error_output'],
         ];
 
