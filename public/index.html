@@ -12,14 +12,11 @@
 <!-- 最新的 Bootstrap 核心 JavaScript 文件 -->
 <script src="https://cdn.bootcss.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/vue"></script>
-<script type="text/javascript">
-var domain = "http://127.0.0.1";
-</script>
 </head>
 <body>
 
 <div class="page-header">
-  <h1>php_crond control center <small id="api-info">{{domain}}</small></h1>
+  <h1>php_crond control center</h1>
 </div>
 
 <div class="panel panel-default">
@@ -126,12 +123,6 @@ var domain = "http://127.0.0.1";
 </div><!-- /.modal -->
 
 <script type="text/javascript">
-var vueApiInfo = new Vue({
-    el: '#api-info',
-    data: {
-        domain: window.domain,
-    }
-  });
 var vueServiceStatus = new Vue({
     el: '#service-status',
     data: {
@@ -146,7 +137,7 @@ var vueServiceList = new Vue({
     methods:{
         deleteTask:function (task_name){
              $.ajax({
-                url : window.domain + "/?c=opt&a=remove&task_name=" + task_name,
+                url : "/?c=opt&a=remove&task_name=" + task_name,
                 dataType : "json",
                 success : function(rs){
                     if (rs.code == 200 && rs.data.code == 1) {
@@ -168,7 +159,7 @@ var vueServiceList = new Vue({
 $(function(){
     //get service status
     $.ajax({
-        url : window.domain + "/?c=status",
+        url : "/?c=status",
         dataType : "json",
         success : function(rs){
             if (rs.data.pid > 0) {
@@ -181,7 +172,7 @@ $(function(){
     //reload
     $("#action-reload").click(function(){
         $.ajax({
-            url : window.domain + "/?c=opt&a=reload",
+            url : "/?c=opt&a=reload",
             dataType : "json",
             success : function(rs){
                 if (rs.code == 200 && rs.data.code == 1) {
@@ -201,7 +192,7 @@ $(function(){
     //shutdown
     $("#action-shutdown").click(function(){
         $.ajax({
-            url : window.domain + "/?c=opt&a=shutdown",
+            url : "/?c=opt&a=shutdown",
             dataType : "json",
             success : function(rs){
                 if (rs.code == 200 && rs.data.code == 1) {
@@ -222,7 +213,7 @@ $(function(){
     $("#action-add-task").click(function(){
         var taskQuery = $("#form-add-task").serialize();
         $.ajax({
-            url : window.domain + "/?c=opt&a=add&" + taskQuery,
+            url : "/?c=opt&a=add&" + taskQuery,
             dataType : "json",
             success : function(rs){
                 if (rs.code == 200 && rs.data.code == 1) {
