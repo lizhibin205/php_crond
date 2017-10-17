@@ -51,10 +51,11 @@ final class Opt extends Controller
     {
         $getParams = $this->request->getQueryParams();
         $taskName = $getParams['task_name'];
+        $params = $getParams['params'];
         $task = [
             'daemon' => $getParams['daemon'],
             'filename' => $getParams['filename'],
-            'params' => is_array($getParams['params']) ? $getParams['params'] : [$getParams['params']],
+            'params' => explode(' ', $params),
             'single' => $getParams['single'] === '1' ? true : false,
             'standard_ouput' => $getParams['standard_ouput'],
             'error_output' => $getParams['error_output'],
