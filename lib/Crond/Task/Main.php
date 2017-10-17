@@ -125,7 +125,7 @@ class Main
     public static function getPid()
     {
         $pidFilename = \Crond\Config::attr('pid_file');
-        return is_file($pidFilename) ? $pidFilename : 0;
+        return is_file($pidFilename) ? file_get_contents($pidFilename) : 0;
     }
 
     /**
