@@ -10,16 +10,11 @@ final class Status extends Controller
     public function index()
     {
         $pid = \Crond\Task\Main::getPid();
-        if (is_numeric($pid)) {
-            $result = [
-                'pid_file' => file_get_contents(\Crond\Config::attr('pid_file')),
-                'task_list' => \Crond\Task\Config::getTaskList()
-            ];
-        } else {
-            $result = [
-                'msg' => 'php_crond is not running'
-            ];
-        }
+
+        $result = [
+            'pid' => $pid,
+            'task_list' => \Crond\Task\Config::getTaskList()
+        ];
 
         return $result;
     }

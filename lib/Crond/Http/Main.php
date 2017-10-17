@@ -48,10 +48,12 @@ class Main
             }
 
             return new Response(
-                200,
-                array('Content-Type' => 'text/plain'),
-                $output
-                );
+                200, [
+                    'Content-Type' => 'text/plain',
+                    'Access-Control-Allow-Origin' => '*',
+                    'Access-Control-Allow-Headers' => 'X-Requested-With',
+                    'Access-Control-Allow-Methods' => 'GET,POST'
+                ], $output);
         });
 
         $socket = new \React\Socket\Server($httpServerConfig['port'], $loop);
