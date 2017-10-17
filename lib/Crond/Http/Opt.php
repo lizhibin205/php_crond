@@ -78,5 +78,9 @@ final class Opt extends Controller
     {
         $taskName = $this->request->getQueryParams()['task_name'];
         \Crond\Task\Config::removeTask($taskName);
+        return [
+            'code' => 1,
+            'msg' => "remove task[{$taskName}] success!"
+        ];
     }
 }
