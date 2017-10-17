@@ -53,6 +53,7 @@ final class Opt extends Controller
         $taskName = $getParams['task_name'];
         $params = $getParams['params'];
         $task = [
+            'is_api' => true,
             'daemon' => $getParams['daemon'],
             'filename' => $getParams['filename'],
             'params' => explode(' ', $params),

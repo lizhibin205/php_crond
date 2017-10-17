@@ -13,7 +13,7 @@
 <script src="https://cdn.bootcss.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/vue"></script>
 <script type="text/javascript">
-var domain = "http://127.0.0.1:8080";
+var domain = "http://127.0.0.1";
 </script>
 </head>
 <body>
@@ -53,7 +53,7 @@ var domain = "http://127.0.0.1:8080";
            <td>{{task.daemon}}</td>
            <td>{{task.filename}}</td>
            <td class="hidden-xs">{{task.params.join(' ')}}</td>
-           <td><button type="button" class="btn btn-xs btn-danger">Delete</button></td>
+           <td><button type="button" class="btn btn-xs btn-danger" v-if="task.is_api" v-bind:task_name="task.task_name" >Delete</button></td>
          </tr>
        </tbody>
      </table>
@@ -68,41 +68,41 @@ var domain = "http://127.0.0.1:8080";
         <h4 class="modal-title" id="myModalLabel">Modal title</h4>
       </div>
       <div class="modal-body">
-            <form>
+            <form id="form-add-task">
                 <div class="form-group">
                     <label for="task_name">Task Name</label>
-                    <input type="text" class="form-control" id="task_name" name="task_name">
+                    <input type="text" class="form-control" id="task_name" name="task_name" value="api-test">
                 </div>
                 <div class="form-group">
                     <label for="daemon">Daemon</label>
-                    <input type="text" class="form-control" id="daemon" name="daemon">
+                    <input type="text" class="form-control" id="daemon" name="daemon" value="0 * * * * *">
                 </div>
                 <div class="form-group">
                     <label for="filename">Filename</label>
-                    <input type="text" class="form-control" id="filename" name="filename">
+                    <input type="text" class="form-control" id="filename" name="filename" value="/usr/local/php_5.6.23/bin/php">
                 </div>
                 <div class="form-group">
                     <label for="params">Params</label>
-                    <input type="text" class="form-control" id="params" name="params">
+                    <input type="text" class="form-control" id="params" name="params" value="-v">
                 </div>
                 <div class="checkbox">
                     <label>
-                        <input type="checkbox" name="is_single"> Is Single
+                        <input type="checkbox" name="is_single" value="1"> Is Single
                     </label>
                 </div>
                 <div class="form-group">
                     <label for="params">Standard Output</label>
-                    <input type="text" class="form-control" id="standard-output" name="standard_output">
+                    <input type="text" class="form-control" id="standard-output" name="standard_output" value="/dev/null">
                 </div>
                 <div class="form-group">
                     <label for="params">Error Output</label>
-                    <input type="text" class="form-control" id="error-output" name="error_output">
+                    <input type="text" class="form-control" id="error-output" name="error_output" value="/dev/null">
                 </div>
             </form>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-primary">Save changes</button>
+        <button type="button" class="btn btn-primary" id="action-add-task">Save changes</button>
       </div>
     </div>
   </div>
@@ -116,7 +116,7 @@ var domain = "http://127.0.0.1:8080";
         <h4 class="modal-title">Infomation</h4>
       </div>
       <div class="modal-body">
-        <p>One fine body&hellip;</p>
+        <p id="dialog-message"></p>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-default" data-dismiss="modal">OK</button>
@@ -159,16 +159,68 @@ $(function(){
     });
     //reload
     $("#action-reload").click(function(){
-    	$.ajax({
+        $.ajax({
             url : window.domain + "/?c=opt&a=reload",
             dataType : "json",
             success : function(rs){
-                $('#dialog').modal('toggle');
+                if (rs.code == 200 && rs.data.code == 1) {
+                    message = "Reload tasks success!";
+                } else {
+                    message = "Operation failure!";
+                }
+                $("#dialog-message").html(message);
+                $('#dialog').modal('show');
             },
             error : function(rs){
-                $('#dialog').modal('toggle');
+                $("#dialog-message").html("Request failure!");
+                $('#dialog').modal('show');
             }
         });
+    });
+    //shutdown
+    $("#action-shutdown").click(function(){
+        $.ajax({
+            url : window.domain + "/?c=opt&a=shutdown",
+            dataType : "json",
+            success : function(rs){
+                if (rs.code == 200 && rs.data.code == 1) {
+                    message = "Shutdown success!";
+                } else {
+                    message = "Operation failure!";
+                }
+                $("#dialog-message").html(message);
+                $('#dialog').modal('show');
+            },
+            error : function(rs){
+                $("#dialog-message").html("Request failure!");
+                $('#dialog').modal('show');
+            }
+        });
+    });
+    //add task
+    $("#action-add-task").click(function(){
+        var taskQuery = $("#form-add-task").serialize();
+        $.ajax({
+            url : window.domain + "/?c=opt&a=add&" + taskQuery,
+            dataType : "json",
+            success : function(rs){
+                if (rs.code == 200 && rs.data.code == 1) {
+                    message = "add task success!";
+                } else {
+                    message = "Operation failure(" + rs.msg + ")!";
+                }
+                $("#dialog-message").html(message);
+                $('#dialog').modal('show');
+            },
+            error : function(rs){
+                $("#dialog-message").html("Request failure!");
+                $('#dialog').modal('show');
+            }
+        });
+    });
+    //delete task
+    $(".action-del-task").click(function(){
+        alert($(this).attr("task_name"));
     });
 });
 </script>
