@@ -49,11 +49,11 @@ var domain = "http://127.0.0.1";
          </tr>
        </thead>
        <tbody id="service-list">
-         <tr v-for="task in list">
+         <tr v-for="(task, index) in list">
            <td>{{task.daemon}}</td>
            <td>{{task.filename}}</td>
            <td class="hidden-xs">{{task.params.join(' ')}}</td>
-           <td><button type="button" class="btn btn-xs btn-danger" v-if="task.is_api" v-bind:task_name="task.task_name" >Delete</button></td>
+           <td><button type="button" class="btn btn-xs btn-danger" v-if="task.is_api" v-on:click="deleteTask(index)">Delete</button></td>
          </tr>
        </tbody>
      </table>
@@ -142,7 +142,28 @@ var vueServiceList = new Vue({
     el: '#service-list',
     data: {
         list: [],
-    }
+    },
+    methods:{
+        deleteTask:function (task_name){
+             $.ajax({
+                url : window.domain + "/?c=opt&a=remove&task_name=" + task_name,
+                dataType : "json",
+                success : function(rs){
+                    if (rs.code == 200 && rs.data.code == 1) {
+                        message = "Remove tasks success!";
+                    } else {
+                        message = "Operation failure!";
+                    }
+                    $("#dialog-message").html(message);
+                    $('#dialog').modal('show');
+                },
+                error : function(rs){
+                    $("#dialog-message").html("Request failure!");
+                    $('#dialog').modal('show');
+                }
+            });
+        }
+    },
 });
 $(function(){
     //get service status
@@ -217,10 +238,6 @@ $(function(){
                 $('#dialog').modal('show');
             }
         });
-    });
-    //delete task
-    $(".action-del-task").click(function(){
-        alert($(this).attr("task_name"));
     });
 });
 </script>

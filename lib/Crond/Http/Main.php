@@ -20,45 +20,48 @@ class Main
 
         $server = new Server(function (ServerRequestInterface $request) {
             $getParams = $request->getQueryParams();
-            $c = ucfirst(isset($getParams['c']) ? $getParams['c'] : 'status');
+            $c = ucfirst(isset($getParams['c']) ? $getParams['c'] : 'page');
             $a = isset($getParams['a']) ? $getParams['a'] : 'index';
             $className = "\\Crond\Http\\{$c}";
 
             if (class_exists($className) && method_exists($className, $a)) {
                 try {
-                    $data = (new $className($request))->$a();
-                    $output = json_encode([
-                        'code' => 200,
-                        'msg' => 'done',
-                        'data' => $data,
-                    ]);
+                    $controller = new $className($request);
+                    $data = $controller->$a();
+                    return self::render($data, $controller, 200, 'done!');
                 } catch (\RuntimeException $ex) {
-                    $output = json_encode([
-                        'code' => 500,
-                        'msg' => $ex->getMessage(),
-                        'data' => null,
-                    ]);
+                    return self::render(null, $controller, 500, $ex->getMessage());
                 }
             } else {
-                $output = json_encode([
-                    'code' => 404,
-                    'msg' => "method[{$c}-{$a}] is not exists!",
-                    'data' => null,
-                ]);
+                return self::render(null, $controller, 404, "method[{$c}-{$a}] is not exists!");
             }
-
-            return new Response(
-                200, [
-                    'Content-Type' => 'text/plain',
-                    'Access-Control-Allow-Origin' => '*',
-                    'Access-Control-Allow-Headers' => 'X-Requested-With',
-                    'Access-Control-Allow-Methods' => 'GET,POST'
-                ], $output);
         });
 
         $socket = new \React\Socket\Server($httpServerConfig['port'], $loop);
         $server->listen($socket);
 
         $loop->run();
+    }
+
+    /**
+     * 渲染控制器输出
+     * @param mixed $output
+     * @param Controller $controller
+     * @param number $httpStatus
+     * @param string $message
+     */
+    private static function render($output, $controller, $httpStatus = 200, $message = '')
+    {
+        if ($controller instanceof IPage) {
+            return new Response(
+                $httpStatus, ['Content-Type' => 'text/html'], $output);
+        } else {
+            return new Response(
+                $httpStatus, ['Content-Type' => 'text/json'], json_encode([
+                    'code' => $httpStatus,
+                    'msg' => $message,
+                    'data' => $output,
+                ]));
+        }
     }
 }
