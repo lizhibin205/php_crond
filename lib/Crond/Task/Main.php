@@ -94,7 +94,9 @@ class Main
             }
             //执行具体任务结束
             //信号处理
-            pcntl_signal_dispatch();
+            if (PHP_OS !== 'WINNT') {
+                pcntl_signal_dispatch();
+            }
             //信号处理结束
             if (!Main::getInstance()->alive()) {
                 $loop->cancelTimer($timer);
