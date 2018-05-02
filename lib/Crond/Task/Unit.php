@@ -145,18 +145,24 @@ class Unit
             if ($configTime === '*') {
                 continue;
             }
-            //任务设置为*/n
-            if (\preg_match("/^\*\/(\d+)$/", $configTime, $matches) === 1) {
-                if ($nowTime % $matches[1] === 0) {
-                    continue;
-                } else {
-                    return false;
+
+            $configTimeList = explode(',', $configTime);
+            $configTimeMatch = false;
+            foreach ($configTimeList as $configTimePart) {
+                //任务设置为*/n
+                if (\preg_match("/^\*\/(\d+)$/", $configTimePart, $matches) === 1) {
+                    if ($nowTime % $matches[1] === 0) {
+                        $configTimeMatch = true;
+                        break;
+                    }
+                }
+                //任务设置为数字
+                if (intval($configTime) === $nowTime) {
+                    $configTimeMatch = true;
+                    break;
                 }
             }
-            //任务设置为数字
-            if (intval($configTime) === $nowTime) {
-                continue;
-            } else {
+            if ($configTimeMatch === false) {
                 return false;
             }
         }
