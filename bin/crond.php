@@ -12,7 +12,7 @@ if (PHP_SAPI !== 'cli') {
     exit;
 }
 
-if (!function_exists('pcntl_exec')) {
+if (!function_exists('pcntl_exec') && PHP_OS !== 'WINNT') {
     echo 'pcntl model not exists!', PHP_EOL;
     exit;
 }
@@ -22,18 +22,20 @@ require __DIR__ . "/../vendor/autoload.php";
 
 //注册信号函数
 //用于安全关闭任务-USR1
-Signal::register(SIGUSR1, function($signal){
-    echo "please wait, shuting down the crond...", PHP_EOL;
-    Main::shutdown();
-});
-//用户重载配置文件-USR2
-Signal::register(SIGUSR2, function($signal){
-    echo "reload task config...", PHP_EOL;
-    Main::reloadTask();
-});
-//接收子进程结束的信号
-Signal::register(SIGCHLD, function(){
-    Main::waitProcess();
-});
+if (PHP_OS !== 'WINNT') {
+    Signal::register(SIGUSR1, function($signal){
+        echo "please wait, shuting down the crond...", PHP_EOL;
+        Main::shutdown();
+    });
+    //用户重载配置文件-USR2
+    Signal::register(SIGUSR2, function($signal){
+        echo "reload task config...", PHP_EOL;
+        Main::reloadTask();
+    });
+    //接收子进程结束的信号
+    Signal::register(SIGCHLD, function(){
+        Main::waitProcess();
+    });
+}
 
 Main::start();
