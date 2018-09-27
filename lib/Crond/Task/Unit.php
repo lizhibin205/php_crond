@@ -83,7 +83,7 @@ class Unit
     /**
      * 构造函数
      * @param string $taskName 任务唯一标识
-     * @param stirng $filename 执行程序路径
+     * @param string $filename 执行程序路径
      * @param array $params 程序输入参数
      * @param int $execSecond 执行的秒
      * @param int $execMintue 执行的分钟
@@ -150,6 +150,7 @@ class Unit
             $configTimeMatch = false;
             foreach ($configTimeList as $configTimePart) {
                 //任务设置为*/n
+                $matches = null;
                 if (\preg_match("/^\*\/(\d+)$/", $configTimePart, $matches) === 1) {
                     if ($nowTime % $matches[1] === 0) {
                         $configTimeMatch = true;
@@ -157,7 +158,7 @@ class Unit
                     }
                 }
                 //任务设置为数字
-                if (intval($configTime) === $nowTime) {
+                if (intval($configTimePart) === $nowTime) {
                     $configTimeMatch = true;
                     break;
                 }
