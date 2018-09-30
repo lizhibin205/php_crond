@@ -5,7 +5,7 @@ final class Status extends Controller
 {
     /**
      * 返回php_crond的执行状态
-     * @return mixeds 
+     * @return mixed
      */
     public function index()
     {

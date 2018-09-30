@@ -6,18 +6,6 @@ use \Symfony\Component\Process\Process;
 class Main
 {
     /**
-     * 任务执行状态，进程没有执行
-     * @var int
-     */
-    const TASK_NONE = 0;
-
-    /**
-     * 任务执行状态，进程正在运行
-     * @var int
-     */
-    const TASK_EXEC = 1;
-
-    /**
      * 存储Main对象的单例
      * @var Main
      */
@@ -73,9 +61,12 @@ class Main
                 $taskUniqName = $task->getUniqTaskName();
 
                 //判断是否single的任务
-                if ($task->isSingle() && $crondTaskMain->checkProcess($taskUniqName) === Main::TASK_EXEC) {
-                    $logger->info($task->getTaskName() . " is running");
-                    continue;
+                if ($task->isSingle()) {
+                    $pid = $crondTaskMain->getProcessPidByUniqName($taskUniqName);
+                    if ($pid > 0) {
+                        $logger->info($task->getTaskName() . " is running(pid={$pid})");
+                        continue;
+                    }
                 }
 
                 list($processFilename, $params) = $task->getExec();
@@ -219,21 +210,17 @@ class Main
     }
 
     /**
-     * 检查任务执行状态
-     * @param string $taskUniqName 任务唯一名称
-     * @return int 任务状态
+     * 获取任务的pid
+     * @param string $taskUniqName
+     * return int
      */
-    private function checkProcess($taskUniqName)
+    private function getProcessPidByUniqName($taskUniqName)
     {
         if (!isset($this->processList[$taskUniqName])) {
-            return self::TASK_NONE;
+            return 0;
         }
         $process = $this->processList[$taskUniqName];
-        if ($process->isRunning()) {
-            return self::TASK_EXEC;
-        } else {
-            unset($this->processList[$taskUniqName]);
-            return self::TASK_NONE;
-        }
+        $pid = $process->getPid();
+        return is_numeric($pid) ? $pid : 0;
     }
 }
