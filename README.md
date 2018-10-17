@@ -1,4 +1,4 @@
-php_crontab 
+php_crond 
 =============
 基于多进程的定时任务管理器，支持秒级别的定时任务
 
@@ -57,6 +57,7 @@ return [
 任务配置
 ---------------
 任务配置文件config/task.php
+
 ```php
 /**
  * task配置文件
@@ -82,7 +83,16 @@ return [
     ]
 ];
 ```
+
 如果你需要配置非常多的任务，可以使用Crond\Task\Directory::registerTaskDirectory，该方法会遍历注册目录下的所有.php文件，并返回其中的任务列表
+
 ```php
 return Crond\Task\Directory::registerTaskDirectory(__DIR__ . "/tasks");
+```
+
+允许配置外部接口，用于返回任务列表。参数url=接口地址，serverId=作为服务标识
+PS：你可能需要额外搭建后台用于任务管理
+
+```php
+return \Crond\Task\Remote::registerTask($url, $serverId);
 ```
