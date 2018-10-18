@@ -2,21 +2,10 @@
 namespace Crond\Task;
 
 use \Symfony\Component\Process\Process;
+use Psr\Http\Message\ServerRequestInterface;
 
 class Main
 {
-    /**
-     * 任务执行状态，进程没有执行
-     * @var int
-     */
-    const TASK_NONE = 0;
-
-    /**
-     * 任务执行状态，进程正在运行
-     * @var int
-     */
-    const TASK_EXEC = 1;
-
     /**
      * 存储Main对象的单例
      * @var Main
@@ -53,17 +42,35 @@ class Main
         //日志记录器
         $logger = new \Monolog\Logger('crond');
         $logger->pushHandler(new \Monolog\Handler\StreamHandler(\Crond\Config::attr('log_file'), \Monolog\Logger::INFO));
-        //HTTP启动
-        $httpConfig = \Crond\Config::attr('http_server');
-        if ($httpConfig['switch'] === true) {
-            $http = new Process(\Crond\Config::attr('php') . " " . PROJECT_ROOT . "/bin/http.php");
-            $http->start();
-        }
 
         //程序开始记录日志
         $logger->info("php_crond start");
         //主进程循环执行任务
         $loop = \React\EventLoop\Factory::create();
+        //HTTP启动
+        $httpConfig = \Crond\Config::attr('http_server');
+        if ($httpConfig['switch'] === true) {
+            $httpServer = new \React\Http\Server(function (ServerRequestInterface $request) {
+                $getParams = $request->getQueryParams();
+                $c = ucfirst(isset($getParams['c']) ? $getParams['c'] : 'page');
+                $a = isset($getParams['a']) ? $getParams['a'] : 'index';
+                $className = "\\Crond\Http\\{$c}";
+                if (class_exists($className) && method_exists($className, $a)) {
+                    try {
+                        $controller = new $className($request);
+                        $data = $controller->$a();
+                        return \Crond\Http\Output::render($data, $controller, 200, 'done!');
+                    } catch (\Exception $ex) {
+                        return \Crond\Http\Output::render(null, $controller, 500, $ex->getMessage());
+                    }
+                } else {
+                    return \Crond\Http\Output::render(null, $controller, 404, "method[{$c}-{$a}] is not exists!");
+                }
+            });
+            $socket = new \React\Socket\Server($httpConfig['port'], $loop);
+            $httpServer->listen($socket);
+        }
+        //主进程定时器
         $loop->addPeriodicTimer(1, function($timer) use ($crondTaskMain, $logger, $loop){
             list($execSecond, $execMintue, $execHour, $execDay, $execMonth, $execWeek) = \explode(' ', date("s i H d m w"));
             //执行及具体任务
@@ -73,9 +80,12 @@ class Main
                 $taskUniqName = $task->getUniqTaskName();
 
                 //判断是否single的任务
-                if ($task->isSingle() && $crondTaskMain->checkProcess($taskUniqName) === Main::TASK_EXEC) {
-                    $logger->info($task->getTaskName() . " is running");
-                    continue;
+                if ($task->isSingle()) {
+                    $pid = $crondTaskMain->getProcessPidByUniqName($taskUniqName);
+                    if ($pid > 0) {
+                        $logger->info($task->getTaskName() . " is running(pid={$pid})");
+                        continue;
+                    }
                 }
 
                 list($processFilename, $params) = $task->getExec();
@@ -100,6 +110,7 @@ class Main
             //信号处理结束
             if (!Main::getInstance()->alive()) {
                 $loop->cancelTimer($timer);
+                $loop->stop();
             }
         });
         $loop->run();
@@ -109,6 +120,29 @@ class Main
         while ($crondTaskMain->isTasksAlive()) {
             sleep(1);
         }
+    }
+
+    /**
+     * 查询主任务运行状态
+     * @return boolean
+     */
+    public static function getRunStatus()
+    {
+        return self::getInstance()->running;
+    }
+
+    /**
+     * 返回任务列表
+     * @return array
+     */
+    public static function getTaskListStatus()
+    {
+        $taskList =  Config::getTaskList();
+        foreach ($taskList as $taskName => &$task) {
+            $task['pid'] = self::getInstance()->getProcessPidByUniqName($taskName);
+        }
+        unset($task);
+        return $taskList;
     }
 
     /**
@@ -219,21 +253,17 @@ class Main
     }
 
     /**
-     * 检查任务执行状态
-     * @param string $taskUniqName 任务唯一名称
-     * @return int 任务状态
+     * 获取任务的pid
+     * @param string $taskUniqName
+     * return int
      */
-    private function checkProcess($taskUniqName)
+    private function getProcessPidByUniqName($taskUniqName)
     {
         if (!isset($this->processList[$taskUniqName])) {
-            return self::TASK_NONE;
+            return 0;
         }
         $process = $this->processList[$taskUniqName];
-        if ($process->isRunning()) {
-            return self::TASK_EXEC;
-        } else {
-            unset($this->processList[$taskUniqName]);
-            return self::TASK_NONE;
-        }
+        $pid = $process->getPid();
+        return is_numeric($pid) ? $pid : 0;
     }
 }

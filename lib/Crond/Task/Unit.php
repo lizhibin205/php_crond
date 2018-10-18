@@ -81,6 +81,32 @@ class Unit
     private $stderr = null;
 
     /**
+     * 检查一个task配置是否合法
+     * @param array $task
+     * @return boolean
+     */
+    public static function checkTask($task)
+    {
+        //field check
+        foreach (['daemon', 'filename', 'params', 'single', 'standard_ouput', 'error_output'] as $field) {
+            if (!isset($task[$field])) {
+                return false;
+            }
+        }
+        $taskDaemon = explode(' ', $task['daemon']);
+        if (count($taskDaemon) != 6) {
+            return false;
+        }
+        if (!is_array($task['params'])) {
+            return false;
+        }
+        if (!is_bool($task['single'])) {
+            return false;
+        }
+        return $task;
+    }
+
+    /**
      * 构造函数
      * @param string $taskName 任务唯一标识
      * @param string $filename 执行程序路径
