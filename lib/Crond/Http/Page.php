@@ -2,7 +2,6 @@
 namespace Crond\Http;
 
 use Crond\Task\Main;
-use Crond\Task\Config;
 
 class Page extends Controller implements IPage
 {
@@ -13,11 +12,12 @@ class Page extends Controller implements IPage
     public function index()
     {
         $pid = Main::getPid();
-        $taskList =  Config::getTaskList();
+        $status = Main::getRunStatus() ? '运行' : '停止';
+        $taskList =  Main::getTaskListStatus();
         $taskListStr = "";
         foreach ($taskList as $taskName => $task) {
             $params = implode(' ', $task['params']);
-            $taskListStr .= "<tr><td>{$taskName}</td><td>{$task['daemon']}</td><td>{$task['filename']}</td><td>{$params}</td></tr>";
+            $taskListStr .= "<tr><td>{$taskName}</td><td>{$task['daemon']}</td><td>{$task['filename']}</td><td>{$params}</td><td>{$task['pid']}</td></tr>";
         }
 
         $data = 
@@ -30,11 +30,11 @@ class Page extends Controller implements IPage
 <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body>
-<div>进程ID：{$pid}</div>
+<div>进程ID：{$pid}，运行状态：{$status}</div>
 <div>任务列表：</div>
-<table>
+<table border="1" cellspacing="0" cellpadding="0">
 <tbody>{$taskListStr}</tbody>
-<thead><td>Name</td><td>Daemon</td><td>Filename</td><td>Params</td></thead>
+<thead><td>Name</td><td>Daemon</td><td>Filename</td><td>Params</td><td>Pid</td></thead>
 </table>
 </body>
 </html>

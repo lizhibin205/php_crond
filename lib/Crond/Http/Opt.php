@@ -1,6 +1,8 @@
 <?php
 namespace Crond\Http;
 
+use \Crond\Task\Main;
+
 final class Opt extends Controller
 {
     /**
@@ -9,7 +11,7 @@ final class Opt extends Controller
      */
     public function shutdown()
     {
-        \Crond\Task\Main::shutdown();
+        Main::shutdown();
         return [
             'code' => 1,
             'msg' => 'shutdown!'
@@ -22,7 +24,7 @@ final class Opt extends Controller
      */
     public function reload()
     {
-        \Crond\Task\Main::reloadTask();
+        Main::reloadTask();
         return [
             'code' => 1,
             'msg' => 'reload!'

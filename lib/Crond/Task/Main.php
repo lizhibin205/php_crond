@@ -110,6 +110,7 @@ class Main
             //信号处理结束
             if (!Main::getInstance()->alive()) {
                 $loop->cancelTimer($timer);
+                $loop->stop();
             }
         });
         $loop->run();
@@ -119,6 +120,29 @@ class Main
         while ($crondTaskMain->isTasksAlive()) {
             sleep(1);
         }
+    }
+
+    /**
+     * 查询主任务运行状态
+     * @return boolean
+     */
+    public static function getRunStatus()
+    {
+        return self::getInstance()->running;
+    }
+
+    /**
+     * 返回任务列表
+     * @return array
+     */
+    public static function getTaskListStatus()
+    {
+        $taskList =  Config::getTaskList();
+        foreach ($taskList as $taskName => &$task) {
+            $task['pid'] = self::getInstance()->getProcessPidByUniqName($taskName);
+        }
+        unset($task);
+        return $taskList;
     }
 
     /**

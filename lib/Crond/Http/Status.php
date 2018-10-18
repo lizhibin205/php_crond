@@ -1,6 +1,8 @@
 <?php
 namespace Crond\Http;
 
+use Crond\Task\Main;
+
 final class Status extends Controller
 {
     /**
@@ -9,11 +11,11 @@ final class Status extends Controller
      */
     public function index()
     {
-        $pid = \Crond\Task\Main::getPid();
+        $pid = Main::getPid();
 
         $result = [
             'pid' => $pid,
-            'task_list' => \Crond\Task\Config::getTaskList()
+            'task_list' => Main::getTaskListStatus(),
         ];
 
         return $result;
