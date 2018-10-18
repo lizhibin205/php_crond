@@ -91,8 +91,24 @@ return Crond\Task\Directory::registerTaskDirectory(__DIR__ . "/tasks");
 ```
 
 允许配置外部接口，用于返回任务列表。参数url=接口地址，serverId=作为服务标识
+
 PS：你可能需要额外搭建后台用于任务管理
 
 ```php
 return \Crond\Task\Remote::registerTask($url, $serverId);
+```
+
+接口返回例子
+
+```javascript
+{
+    "process_a": {
+        "daemon": "0 * * * * *",
+        "filename": "echo",
+        "params": ["hello world!"],
+        "single": true,
+        "standard_ouput": "/dev/null",
+        "error_output": "/dev/null"
+    }
+}
 ```
