@@ -83,8 +83,14 @@ class Main
                 if ($task->isSingle()) {
                     $pid = $crondTaskMain->getProcessPidByUniqName($taskUniqName);
                     if ($pid > 0) {
-                        $logger->info($task->getTaskName() . " is running(pid={$pid})");
-                        continue;
+                        //判断是否要杀死重启
+                        if ($task->isSingleKillPervious()) {
+                             $exitCode = $crondTaskMain->stopProcessByUniqName($taskUniqName);
+                             $logger->info($task->getTaskName() . "killed by single kill pervious, and exit code :{$exitCode}");
+                        } else {
+                            $logger->info($task->getTaskName() . " is running(pid={$pid})");
+                            continue;
+                        }
                     }
                 }
 
@@ -255,7 +261,7 @@ class Main
     /**
      * 获取任务的pid
      * @param string $taskUniqName
-     * return int
+     * @return int
      */
     private function getProcessPidByUniqName($taskUniqName)
     {
@@ -265,5 +271,20 @@ class Main
         $process = $this->processList[$taskUniqName];
         $pid = $process->getPid();
         return is_numeric($pid) ? $pid : 0;
+    }
+
+    /**
+     * 根据任务名终止进程
+     * @param string $taskUniqName
+     * @return int
+     */
+    private function stopProcessByUniqName($taskUniqName)
+    {
+        if (!isset($this->processList[$taskUniqName])) {
+            return 0;
+        }
+        $process = $this->processList[$taskUniqName];
+        //这里使用参数0，避免阻塞主进程
+        return $process->stop(0);
     }
 }

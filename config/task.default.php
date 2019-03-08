@@ -7,6 +7,7 @@
  *      'filename' => '/usr/local/php/bin/php', //执行程序
  *      'params' => [],//执行程序参数
  *      'single' => true,//如果进程在运行，则不执行，只保持一个进程
+ *      'single_kill_previous' => false, //如果设置为true，则检查到上一个进程还在执行时，会停止上一个进程，并启动新的进程
  *      'standard_ouput' => '', //标准输出
  *      'error_output' => '', // 错误输出
  *  ]

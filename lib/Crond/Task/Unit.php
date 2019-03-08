@@ -69,6 +69,12 @@ class Unit
     private $single = false;
 
     /**
+     * 保持单进程情况下，是否杀死前一个进程
+     * @var bool
+     */
+    private $singleKillPrevious = false;
+
+    /**
      * 标准输出路径
      * @var string
      */
@@ -88,6 +94,7 @@ class Unit
     public static function checkTask($task)
     {
         //field check
+        //必须参数
         foreach (['daemon', 'filename', 'params', 'single', 'standard_ouput', 'error_output'] as $field) {
             if (!isset($task[$field])) {
                 return false;
@@ -101,6 +108,10 @@ class Unit
             return false;
         }
         if (!is_bool($task['single'])) {
+            return false;
+        }
+        //可选参数
+        if (isset($task['single_kill_previous']) && !is_bool($task['single_kill_previous'])) {
             return false;
         }
         return $task;
@@ -138,6 +149,15 @@ class Unit
     public function setSingle($single)
     {
         $this->single = $single;
+    }
+
+    /**
+     * 设置单进程情况下，是否杀死前一个进程
+     * @param bool $singleKillPervious
+     */
+    public function setSingleKillPervious($singleKillPervious)
+    {
+        $this->singleKillPrevious = $singleKillPervious;
     }
 
     /**
@@ -230,6 +250,15 @@ class Unit
     public function isSingle()
     {
         return $this->single;
+    }
+
+    /**
+     * 获取在单进程情况下是否杀死上一个进程
+     * @return boolean
+     */
+    public function isSingleKillPervious()
+    {
+        return $this->singleKillPrevious;
     }
 
     /**
