@@ -1,6 +1,8 @@
 <?php
 namespace Http\Controller;
 
+use Psr\Http\Message\ServerRequestInterface;
+
 abstract class BaseController
 {
     /**

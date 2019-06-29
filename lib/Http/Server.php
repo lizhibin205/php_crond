@@ -1,6 +1,8 @@
 <?php
 namespace Http;
 
+use Psr\Http\Message\ServerRequestInterface;
+
 class Server
 {
     /**
@@ -10,14 +12,16 @@ class Server
     {
         $httpServer = new \React\Http\Server(function (ServerRequestInterface $request) {
             $getParams = $request->getQueryParams();
-            $controller = ucfirst(isset($getParams['c']) ? $getParams['c'] : 'page');
+            $controller = ucfirst(isset($getParams['c']) ? $getParams['c'] : 'Page');
             $action = isset($getParams['a']) ? $getParams['a'] : 'index';
-            $className = "\\Http\\{$controller}";
+            $className = "\\Http\\Controller\\{$controller}";
             if (class_exists($className) && method_exists($className, $action)) {
                 try {
-                    $controller = new $className($request);
-                    return $controller->$a();
+                    $controllerClass = new $className($request);
+                    return $controllerClass->$action();
                 } catch (\Exception $ex) {
+                    return Render::html(500, [], $ex->getMessage());
+                } catch (\Throwable $ex) {
                     return Render::html(500, [], $ex->getMessage());
                 }
             } else {
