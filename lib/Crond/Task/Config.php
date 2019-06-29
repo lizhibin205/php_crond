@@ -25,7 +25,7 @@ class Config
             list($execSecond, $execMintue, $execHour, $execDay, $execMonth, $execWeek) = \explode(' ', $task['daemon']);
             $unit = new Unit($taskName, $task['filename'], $task['params'], $execSecond, $execMintue, $execHour, $execDay, $execMonth, $execWeek);
             $unit->setSingle($task['single']);
-            $unit->setSingleKillPervious($task['single_kill_pervious']);
+            //$unit->setSingleKillPervious($task['single_kill_pervious']);
             $unit->setOuput($task['standard_ouput'], $task['error_output']);
             self::$taskData[] = $unit;
         }

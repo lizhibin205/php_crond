@@ -124,6 +124,20 @@ class ComposerStaticInit404a5131073371601681b4e69e0647ce
     );
 
     public static $prefixesPsr0 = array (
+        'S' => 
+        array (
+            'Storage\\' => 
+            array (
+                0 => __DIR__ . '/../..' . '/lib',
+            ),
+        ),
+        'H' => 
+        array (
+            'Http\\' => 
+            array (
+                0 => __DIR__ . '/../..' . '/lib',
+            ),
+        ),
         'E' => 
         array (
             'Evenement' => 

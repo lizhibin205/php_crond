@@ -1,7 +1,8 @@
 <?php
 namespace Crond\Task;
 
-use \Symfony\Component\Process\Process;
+use Http\Server;
+use Symfony\Component\Process\Process;
 use Psr\Http\Message\ServerRequestInterface;
 
 class Main
@@ -50,23 +51,7 @@ class Main
         //HTTP启动
         $httpConfig = \Crond\Config::attr('http_server');
         if ($httpConfig['switch'] === true) {
-            $httpServer = new \React\Http\Server(function (ServerRequestInterface $request) {
-                $getParams = $request->getQueryParams();
-                $c = ucfirst(isset($getParams['c']) ? $getParams['c'] : 'page');
-                $a = isset($getParams['a']) ? $getParams['a'] : 'index';
-                $className = "\\Crond\Http\\{$c}";
-                if (class_exists($className) && method_exists($className, $a)) {
-                    try {
-                        $controller = new $className($request);
-                        $data = $controller->$a();
-                        return \Crond\Http\Output::render($data, $controller, 200, 'done!');
-                    } catch (\Exception $ex) {
-                        return \Crond\Http\Output::render(null, $controller, 500, $ex->getMessage());
-                    }
-                } else {
-                    return \Crond\Http\Output::render(null, $controller, 404, "method[{$c}-{$a}] is not exists!");
-                }
-            });
+            $httpServer = Server::createHttpServer();
             $socket = new \React\Socket\Server($httpConfig['port'], $loop);
             $httpServer->listen($socket);
         }

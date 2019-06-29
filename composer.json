@@ -14,7 +14,9 @@
     },
     "autoload":{
         "psr-0":{
-            "Crond\\" : "lib/"
+            "Crond\\": "lib/",
+            "Http\\": "lib/",
+            "Storage\\": "lib/"
         }
     },
     "repositories": {
