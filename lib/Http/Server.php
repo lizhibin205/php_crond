@@ -8,7 +8,7 @@ class Server
      */
     public static function createHttpServer()
     {
-        $httpServer = \React\Http\Server(function (ServerRequestInterface $request) {
+        $httpServer = new \React\Http\Server(function (ServerRequestInterface $request) {
             $getParams = $request->getQueryParams();
             $controller = ucfirst(isset($getParams['c']) ? $getParams['c'] : 'page');
             $action = isset($getParams['a']) ? $getParams['a'] : 'index';
@@ -25,5 +25,6 @@ class Server
                 return Render::html(404, [], "Controller:{$controller} and action:{$action} not found.");
             }
         });
+        return $httpServer;
     }
 }
