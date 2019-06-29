@@ -30,7 +30,7 @@ interface ConnectorInterface
      *
      * ```php
      * $connector->connect('google.com:443')->then(
-     *     function (ConnectionInterface $connection) {
+     *     function (React\Socket\ConnectionInterface $connection) {
      *         // connection successfully established
      *     },
      *     function (Exception $error) {
@@ -51,7 +51,7 @@ interface ConnectorInterface
      * ```
      *
      * @param string $uri
-     * @return React\Promise\PromiseInterface resolves with a stream implementing ConnectionInterface on success or rejects with an Exception on error
+     * @return \React\Promise\PromiseInterface resolves with a stream implementing ConnectionInterface on success or rejects with an Exception on error
      * @see ConnectionInterface
      */
     public function connect($uri);

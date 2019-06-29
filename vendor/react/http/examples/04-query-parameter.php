@@ -21,7 +21,9 @@ $server = new Server(function (ServerRequestInterface $request) {
 
     return new Response(
         200,
-        array('Content-Type' => 'text/html'),
+        array(
+            'Content-Type' => 'text/html'
+        ),
         $body
     );
 });

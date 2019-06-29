@@ -2,7 +2,9 @@
 
 namespace React\Tests\Cache;
 
-class TestCase extends \PHPUnit_Framework_TestCase
+use PHPUnit\Framework\TestCase as BaseTestCase;
+
+class TestCase extends BaseTestCase
 {
     protected function expectCallableExactly($amount)
     {
@@ -24,6 +26,17 @@ class TestCase extends \PHPUnit_Framework_TestCase
         return $mock;
     }
 
+    protected function expectCallableOnceWith($param)
+    {
+        $mock = $this->createCallableMock();
+        $mock
+            ->expects($this->once())
+            ->method('__invoke')
+            ->with($param);
+
+        return $mock;
+    }
+
     protected function expectCallableNever()
     {
         $mock = $this->createCallableMock();
@@ -36,6 +49,6 @@ class TestCase extends \PHPUnit_Framework_TestCase
 
     protected function createCallableMock()
     {
-        return $this->getMock('React\Tests\Cache\CallableStub');
+        return $this->getMockBuilder('React\Tests\Cache\CallableStub')->getMock();
     }
 }

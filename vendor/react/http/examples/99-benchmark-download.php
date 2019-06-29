@@ -86,12 +86,16 @@ class ChunkRepeater extends EventEmitter implements ReadableStreamInterface
     }
 }
 
+// Note how this example still uses `Server` instead of `StreamingServer`.
+// The `StreamingServer` is only required for streaming *incoming* requests.
 $server = new Server(function (ServerRequestInterface $request) use ($loop) {
     switch ($request->getUri()->getPath()) {
         case '/':
             return new Response(
                 200,
-                array('Content-Type' => 'text/html'),
+                array(
+                    'Content-Type' => 'text/html'
+                ),
                 '<html><a href="1g.bin">1g.bin</a><br/><a href="10g.bin">10g.bin</a></html>'
             );
         case '/1g.bin':
@@ -108,7 +112,10 @@ $server = new Server(function (ServerRequestInterface $request) use ($loop) {
 
     return new Response(
         200,
-        array('Content-Type' => 'application/octet-data', 'Content-Length' => $stream->getSize()),
+        array(
+            'Content-Type' => 'application/octet-data',
+            'Content-Length' => $stream->getSize()
+        ),
         $stream
     );
 });

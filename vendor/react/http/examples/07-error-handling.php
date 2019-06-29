@@ -21,7 +21,9 @@ $server = new Server(function (ServerRequestInterface $request) use (&$count) {
 
         $response = new Response(
             200,
-            array('Content-Type' => 'text/plain'),
+            array(
+                'Content-Type' => 'text/plain'
+            ),
             "Hello World!\n"
         );
 

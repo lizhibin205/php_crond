@@ -2,10 +2,11 @@
 
 namespace React\Tests\Dns\Model;
 
+use PHPUnit\Framework\TestCase;
 use React\Dns\Query\Query;
 use React\Dns\Model\Message;
 
-class MessageTest extends \PHPUnit_Framework_TestCase
+class MessageTest extends TestCase
 {
     public function testCreateRequestDesiresRecusion()
     {
@@ -25,5 +26,6 @@ class MessageTest extends \PHPUnit_Framework_TestCase
         $this->assertFalse($request->header->isQuery());
         $this->assertTrue($request->header->isResponse());
         $this->assertEquals(0, $request->header->get('anCount'));
+        $this->assertEquals(Message::RCODE_OK, $request->getResponseCode());
     }
 }

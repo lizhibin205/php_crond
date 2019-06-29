@@ -5,8 +5,8 @@ namespace React\Socket;
 use Evenement\EventEmitter;
 use React\EventLoop\LoopInterface;
 use React\Stream\DuplexResourceStream;
-use React\Stream\Stream;
 use React\Stream\Util;
+use React\Stream\WritableResourceStream;
 use React\Stream\WritableStreamInterface;
 
 /**
@@ -43,27 +43,33 @@ class Connection extends EventEmitter implements ConnectionInterface
 
     public function __construct($resource, LoopInterface $loop)
     {
-        // PHP < 5.6.8 suffers from a buffer indicator bug on secure TLS connections
-        // as a work-around we always read the complete buffer until its end.
-        // The buffer size is limited due to TCP/IP buffers anyway, so this
-        // should not affect usage otherwise.
-        // See https://bugs.php.net/bug.php?id=65137
-        // https://bugs.php.net/bug.php?id=41631
-        // https://github.com/reactphp/socket-client/issues/24
-        $clearCompleteBuffer = (version_compare(PHP_VERSION, '5.6.8', '<'));
+        // PHP < 7.3.3 (and PHP < 7.2.15) suffers from a bug where feof() might
+        // block with 100% CPU usage on fragmented TLS records.
+        // We try to work around this by always consuming the complete receive
+        // buffer at once to avoid stale data in TLS buffers. This is known to
+        // work around high CPU usage for well-behaving peers, but this may
+        // cause very large data chunks for high throughput scenarios. The buggy
+        // behavior can still be triggered due to network I/O buffers or
+        // malicious peers on affected versions, upgrading is highly recommended.
+        // @link https://bugs.php.net/bug.php?id=77390
+        $clearCompleteBuffer = \PHP_VERSION_ID < 70215 || (\PHP_VERSION_ID >= 70300 && \PHP_VERSION_ID < 70303);
 
-        // @codeCoverageIgnoreStart
-        if (class_exists('React\Stream\Stream')) {
-            // legacy react/stream < 0.7 requires additional buffer property
-            $this->input = new Stream($resource, $loop);
-            if ($clearCompleteBuffer) {
-                $this->input->bufferSize = null;
-            }
-        } else {
-            // preferred react/stream >= 0.7 accepts buffer parameter
-            $this->input = new DuplexResourceStream($resource, $loop, $clearCompleteBuffer ? -1 : null);
-        }
-        // @codeCoverageIgnoreEnd
+        // PHP < 7.1.4 (and PHP < 7.0.18) suffers from a bug when writing big
+        // chunks of data over TLS streams at once.
+        // We try to work around this by limiting the write chunk size to 8192
+        // bytes for older PHP versions only.
+        // This is only a work-around and has a noticable performance penalty on
+        // affected versions. Please update your PHP version.
+        // This applies to all streams because TLS may be enabled later on.
+        // See https://github.com/reactphp/socket/issues/105
+        $limitWriteChunks = (\PHP_VERSION_ID < 70018 || (\PHP_VERSION_ID >= 70100 && \PHP_VERSION_ID < 70104));
+
+        $this->input = new DuplexResourceStream(
+            $resource,
+            $loop,
+            $clearCompleteBuffer ? -1 : null,
+            new WritableResourceStream($resource, $loop, null, $limitWriteChunks ? 8192 : null)
+        );
 
         $this->stream = $resource;
 
@@ -116,7 +122,7 @@ class Connection extends EventEmitter implements ConnectionInterface
 
     public function handleClose()
     {
-        if (!is_resource($this->stream)) {
+        if (!\is_resource($this->stream)) {
             return;
         }
 
@@ -124,19 +130,20 @@ class Connection extends EventEmitter implements ConnectionInterface
         // side already closed. Shutting down may return to blocking mode on
         // some legacy versions, so reset to non-blocking just in case before
         // continuing to close the socket resource.
-        @stream_socket_shutdown($this->stream, STREAM_SHUT_RDWR);
-        stream_set_blocking($this->stream, false);
-        fclose($this->stream);
+        // Underlying Stream implementation will take care of closing file
+        // handle, so we otherwise keep this open here.
+        @\stream_socket_shutdown($this->stream, \STREAM_SHUT_RDWR);
+        \stream_set_blocking($this->stream, false);
     }
 
     public function getRemoteAddress()
     {
-        return $this->parseAddress(@stream_socket_get_name($this->stream, true));
+        return $this->parseAddress(@\stream_socket_get_name($this->stream, true));
     }
 
     public function getLocalAddress()
     {
-        return $this->parseAddress(@stream_socket_get_name($this->stream, false));
+        return $this->parseAddress(@\stream_socket_get_name($this->stream, false));
     }
 
     private function parseAddress($address)
@@ -147,14 +154,14 @@ class Connection extends EventEmitter implements ConnectionInterface
 
         if ($this->unix) {
             // remove trailing colon from address for HHVM < 3.19: https://3v4l.org/5C1lo
-            // note that techncially ":" is a valid address, so keep this in place otherwise
-            if (substr($address, -1) === ':' && defined('HHVM_VERSION_ID') && HHVM_VERSION_ID < 31900) {
-                $address = (string)substr($address, 0, -1);
+            // note that technically ":" is a valid address, so keep this in place otherwise
+            if (\substr($address, -1) === ':' && \defined('HHVM_VERSION_ID') && \HHVM_VERSION_ID < 31900) {
+                $address = (string)\substr($address, 0, -1);
             }
 
-            // work around unknown addresses should return null value: https://3v4l.org/5C1lo
+            // work around unknown addresses should return null value: https://3v4l.org/5C1lo and https://bugs.php.net/bug.php?id=74556
             // PHP uses "\0" string and HHVM uses empty string (colon removed above)
-            if ($address === "\x00" || $address === '') {
+            if ($address === '' || $address[0] === "\x00" ) {
                 return null;
             }
 
@@ -162,10 +169,10 @@ class Connection extends EventEmitter implements ConnectionInterface
         }
 
         // check if this is an IPv6 address which includes multiple colons but no square brackets
-        $pos = strrpos($address, ':');
-        if ($pos !== false && strpos($address, ':') < $pos && substr($address, 0, 1) !== '[') {
-            $port = substr($address, $pos + 1);
-            $address = '[' . substr($address, 0, $pos) . ']:' . $port;
+        $pos = \strrpos($address, ':');
+        if ($pos !== false && \strpos($address, ':') < $pos && \substr($address, 0, 1) !== '[') {
+            $port = \substr($address, $pos + 1);
+            $address = '[' . \substr($address, 0, $pos) . ']:' . $port;
         }
 
         return ($this->encryptionEnabled ? 'tls' : 'tcp') . '://' . $address;

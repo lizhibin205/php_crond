@@ -3,6 +3,8 @@
 namespace React\Socket;
 
 use Evenement\EventEmitter;
+use Exception;
+use OverflowException;
 
 /**
  * The `LimitingServer` decorator wraps a given `ServerInterface` and is responsible
@@ -19,8 +21,8 @@ use Evenement\EventEmitter;
  * open connections.
  *
  * ```php
- * $server = new LimitingServer($server, 100);
- * $server->on('connection', function (ConnectionInterface $connection) {
+ * $server = new React\Socket\LimitingServer($server, 100);
+ * $server->on('connection', function (React\Socket\ConnectionInterface $connection) {
  *     $connection->write('hello there!' . PHP_EOL);
  *     …
  * });
@@ -50,8 +52,8 @@ class LimitingServer extends EventEmitter implements ServerInterface
      * this and no `connection` event will be emitted.
      *
      * ```php
-     * $server = new LimitingServer($server, 100);
-     * $server->on('connection', function (ConnectionInterface $connection) {
+     * $server = new React\Socket\LimitingServer($server, 100);
+     * $server->on('connection', function (React\Socket\ConnectionInterface $connection) {
      *     $connection->write('hello there!' . PHP_EOL);
      *     …
      * });
@@ -60,7 +62,7 @@ class LimitingServer extends EventEmitter implements ServerInterface
      * You MAY pass a `null` limit in order to put no limit on the number of
      * open connections and keep accepting new connection until you run out of
      * operating system resources (such as open file handles). This may be
-     * useful it you do not want to take care of applying a limit but still want
+     * useful if you do not want to take care of applying a limit but still want
      * to use the `getConnections()` method.
      *
      * You can optionally configure the server to pause accepting new
@@ -79,8 +81,8 @@ class LimitingServer extends EventEmitter implements ServerInterface
      * an interactive chat).
      *
      * ```php
-     * $server = new LimitingServer($server, 100, true);
-     * $server->on('connection', function (ConnectionInterface $connection) {
+     * $server = new React\Socket\LimitingServer($server, 100, true);
+     * $server->on('connection', function (React\Socket\ConnectionInterface $connection) {
      *     $connection->write('hello there!' . PHP_EOL);
      *     …
      * });
@@ -154,7 +156,7 @@ class LimitingServer extends EventEmitter implements ServerInterface
     public function handleConnection(ConnectionInterface $connection)
     {
         // close connection if limit exceeded
-        if ($this->limit !== null && count($this->connections) >= $this->limit) {
+        if ($this->limit !== null && \count($this->connections) >= $this->limit) {
             $this->handleError(new \OverflowException('Connection closed because server reached connection limit'));
             $connection->close();
             return;
@@ -167,7 +169,7 @@ class LimitingServer extends EventEmitter implements ServerInterface
         });
 
         // pause accepting new connections if limit exceeded
-        if ($this->pauseOnLimit && !$this->autoPaused && count($this->connections) >= $this->limit) {
+        if ($this->pauseOnLimit && !$this->autoPaused && \count($this->connections) >= $this->limit) {
             $this->autoPaused = true;
 
             if (!$this->manuPaused) {
@@ -181,10 +183,10 @@ class LimitingServer extends EventEmitter implements ServerInterface
     /** @internal */
     public function handleDisconnection(ConnectionInterface $connection)
     {
-        unset($this->connections[array_search($connection, $this->connections)]);
+        unset($this->connections[\array_search($connection, $this->connections)]);
 
         // continue accepting new connection if below limit
-        if ($this->autoPaused && count($this->connections) < $this->limit) {
+        if ($this->autoPaused && \count($this->connections) < $this->limit) {
             $this->autoPaused = false;
 
             if (!$this->manuPaused) {

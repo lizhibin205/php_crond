@@ -35,9 +35,18 @@ $loop = Factory::create();
 // this means that any Upgraded data will simply be sent back to the client
 $chat = new ThroughStream();
 
+// Note how this example uses the `Server` instead of `StreamingServer`.
+// The initial incoming request does not contain a body and we upgrade to a
+// stream object below.
 $server = new Server(function (ServerRequestInterface $request) use ($loop, $chat) {
     if ($request->getHeaderLine('Upgrade') !== 'chat' || $request->getProtocolVersion() === '1.0') {
-        return new Response(426, array('Upgrade' => 'chat'), '"Upgrade: chat" required');
+        return new Response(
+            426,
+            array(
+                'Upgrade' => 'chat'
+            ),
+            '"Upgrade: chat" required'
+        );
     }
 
     // user stream forwards chat data and accepts incoming data
@@ -53,7 +62,7 @@ $server = new Server(function (ServerRequestInterface $request) use ($loop, $cha
 
     // send anything that is received to the whole channel
     $in->on('data', function ($data) use ($username, $chat) {
-        $data = trim(preg_replace('/[^\w\d \.\,\-\!\?]/u', '', $data));
+        $data = trim(preg_replace('/[^\w \.\,\-\!\?]/u', '', $data));
 
         $chat->write($username . ': ' . $data . PHP_EOL);
     });

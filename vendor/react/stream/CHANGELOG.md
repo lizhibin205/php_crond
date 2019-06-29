@@ -1,5 +1,84 @@
 # Changelog
 
+## 1.1.0 (2018-01-01)
+
+*   Improvement: Increase performance by optimizing global function and constant look ups
+    (#137 by @WyriHaximus)
+*   Travis: Test against PHP 7.3
+    (#138 by @WyriHaximus)
+*   Fix: Ignore empty reads 
+    (#139 by @WyriHaximus)
+
+## 1.0.0 (2018-07-11)
+
+*   First stable LTS release, now following [SemVer](https://semver.org/).
+    We'd like to emphasize that this component is production ready and battle-tested.
+    We plan to support all long-term support (LTS) releases for at least 24 months,
+    so you have a rock-solid foundation to build on top of.
+
+>   Contains no other changes, so it's actually fully compatible with the v0.7.7 release.
+
+## 0.7.7 (2018-01-19)
+
+*   Improve test suite by fixing forward compatibility with upcoming EventLoop
+    releases, avoid risky tests and add test group to skip integration tests
+    relying on internet connection and apply appropriate test timeouts.
+    (#128, #131 and #132 by @clue)
+
+## 0.7.6 (2017-12-21)
+
+*   Fix: Work around reading from unbuffered pipe stream in legacy PHP < 5.4.28 and PHP < 5.5.12
+    (#126 by @clue)
+
+*   Improve test suite by simplifying test bootstrapping logic via Composer and
+    test against PHP 7.2
+    (#127 by @clue and #124 by @carusogabriel)
+
+## 0.7.5 (2017-11-20)
+
+*   Fix: Igore excessive `fopen()` mode flags for `WritableResourceStream`
+    (#119 by @clue)
+
+*   Fix: Fix forward compatibility with upcoming EventLoop releases
+    (#121 by @clue)
+
+*   Restructure examples to ease getting started
+    (#123 by @clue)
+
+*   Improve test suite by adding forward compatibility with PHPUnit 6 and
+    ignore Mac OS X test failures for now until Travis tests work again
+    (#122 by @gabriel-caruso and #120 by @clue)
+
+## 0.7.4 (2017-10-11)
+
+*   Fix: Remove event listeners from `CompositeStream` once closed and
+    remove undocumented left-over `close` event argument
+    (#116 by @clue)
+
+*   Minor documentation improvements: Fix wrong class name in example,
+    fix typos in README and
+    fix forward compatibility with upcoming EventLoop releases in example
+    (#113 by @docteurklein and #114 and #115 by @clue)
+
+*   Improve test suite by running against Mac OS X on Travis
+    (#112 by @clue)
+
+## 0.7.3 (2017-08-05)
+
+*   Improvement: Support Événement 3.0 a long side 2.0 and 1.0
+    (#108 by @WyriHaximus)
+
+*   Readme: Corrected loop initialization in usage example
+    (#109 by @pulyavin)
+
+*   Travis: Lock linux distribution preventing future builds from breaking
+    (#110 by @clue)
+
+## 0.7.2 (2017-06-15)
+
+*   Bug fix: WritableResourceStream: Close the underlying stream when closing the stream.
+    (#107 by @WyriHaximus)  
+
 ## 0.7.1 (2017-05-20)
 
 *   Feature: Add optional `$writeChunkSize` parameter to limit maximum number of
@@ -68,6 +147,9 @@
 *   Feature: Explicitly allow custom events and exclude any semantics
     (#97 by @clue)
 
+*   Strict definition for event callback functions
+    (#101 by @clue)
+
 *   Support legacy PHP 5.3 through PHP 7.1 and HHVM and improve usage documentation
     (#100 and #102 by @clue)
 
@@ -115,7 +197,7 @@
   ```
 
 * Fix / BC Break: Enforce using non-blocking I/O
-  (#47 by @clue)
+  (#46 by @clue)
 
   > BC note: This is known to affect process pipes on Windows which do not
     support non-blocking I/O and could thus block the whole EventLoop previously.

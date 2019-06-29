@@ -7,9 +7,9 @@
     "require": {
         "php":">=5.5.9",
         "monolog/monolog":"1.22.1",
-        "react/event-loop":"0.4.3",
         "symfony/process":"3.3.2",
-        "react/http":"0.7.0",
+        "react/event-loop":"1.1.*",
+        "react/http":"0.8.*",
         "guzzlehttp/guzzle":"6.3.3"
     },
     "autoload":{

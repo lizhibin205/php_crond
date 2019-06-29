@@ -2,18 +2,19 @@
 
 namespace React\Tests\Http;
 
+use Psr\Http\Message\ServerRequestInterface;
+use React\Http\Middleware\LimitConcurrentRequestsMiddleware;
+use React\Http\Middleware\RequestBodyBufferMiddleware;
+use React\Http\Response;
+use React\Http\StreamingServer;
 use React\Socket\Server as Socket;
 use React\EventLoop\Factory;
-use React\Http\Server;
 use Psr\Http\Message\RequestInterface;
 use React\Socket\Connector;
 use React\Socket\ConnectionInterface;
 use Clue\React\Block;
-use React\Http\Response;
 use React\Socket\SecureServer;
-use React\Stream\ReadableStreamInterface;
-use React\Promise\Promise;
-use React\Promise\PromiseInterface;
+use React\Promise;
 use React\Promise\Stream;
 use React\Stream\ThroughStream;
 
@@ -24,7 +25,7 @@ class FunctionalServerTest extends TestCase
         $loop = Factory::create();
         $connector = new Connector($loop);
 
-        $server = new Server(function (RequestInterface $request) {
+        $server = new StreamingServer(function (RequestInterface $request) {
             return new Response(200, array(), (string)$request->getUri());
         });
 
@@ -45,12 +46,39 @@ class FunctionalServerTest extends TestCase
         $socket->close();
     }
 
+    public function testPlainHttpOnRandomPortWithSingleRequestHandlerArray()
+    {
+        $loop = Factory::create();
+        $connector = new Connector($loop);
+
+        $server = new StreamingServer(array(
+            function () {
+                return new Response(404);
+            },
+        ));
+
+        $socket = new Socket(0, $loop);
+        $server->listen($socket);
+
+        $result = $connector->connect($socket->getAddress())->then(function (ConnectionInterface $conn) {
+            $conn->write("GET / HTTP/1.0\r\nHost: " . noScheme($conn->getRemoteAddress()) . "\r\n\r\n");
+
+            return Stream\buffer($conn);
+        });
+
+        $response = Block\await($result, $loop, 1.0);
+
+        $this->assertContains("HTTP/1.0 404 Not Found", $response);
+
+        $socket->close();
+    }
+
     public function testPlainHttpOnRandomPortWithoutHostHeaderUsesSocketUri()
     {
         $loop = Factory::create();
         $connector = new Connector($loop);
 
-        $server = new Server(function (RequestInterface $request) {
+        $server = new StreamingServer(function (RequestInterface $request) {
             return new Response(200, array(), (string)$request->getUri());
         });
 
@@ -76,7 +104,7 @@ class FunctionalServerTest extends TestCase
         $loop = Factory::create();
         $connector = new Connector($loop);
 
-        $server = new Server(function (RequestInterface $request) {
+        $server = new StreamingServer(function (RequestInterface $request) {
             return new Response(200, array(), (string)$request->getUri());
         });
 
@@ -108,7 +136,7 @@ class FunctionalServerTest extends TestCase
             'tls' => array('verify_peer' => false)
         ));
 
-        $server = new Server(function (RequestInterface $request) {
+        $server = new StreamingServer(function (RequestInterface $request) {
             return new Response(200, array(), (string)$request->getUri());
         });
 
@@ -118,7 +146,7 @@ class FunctionalServerTest extends TestCase
         ));
         $server->listen($socket);
 
-        $result = $connector->connect('tls://' . noScheme($socket->getAddress()))->then(function (ConnectionInterface $conn) {
+        $result = $connector->connect($socket->getAddress())->then(function (ConnectionInterface $conn) {
             $conn->write("GET / HTTP/1.0\r\nHost: " . noScheme($conn->getRemoteAddress()) . "\r\n\r\n");
 
             return Stream\buffer($conn);
@@ -128,6 +156,47 @@ class FunctionalServerTest extends TestCase
 
         $this->assertContains("HTTP/1.0 200 OK", $response);
         $this->assertContains('https://' . noScheme($socket->getAddress()) . '/', $response);
+
+        $socket->close();
+    }
+
+    public function testSecureHttpsReturnsData()
+    {
+        if (!function_exists('stream_socket_enable_crypto')) {
+            $this->markTestSkipped('Not supported on your platform (outdated HHVM?)');
+        }
+
+        $loop = Factory::create();
+
+        $server = new StreamingServer(function (RequestInterface $request) {
+            return new Response(
+                200,
+                array(),
+                str_repeat('.', 33000)
+            );
+        });
+
+        $socket = new Socket(0, $loop);
+        $socket = new SecureServer($socket, $loop, array(
+            'local_cert' => __DIR__ . '/../examples/localhost.pem'
+        ));
+        $server->listen($socket);
+
+        $connector = new Connector($loop, array(
+            'tls' => array('verify_peer' => false)
+        ));
+
+        $result = $connector->connect($socket->getAddress())->then(function (ConnectionInterface $conn) {
+            $conn->write("GET / HTTP/1.0\r\nHost: " . noScheme($conn->getRemoteAddress()) . "\r\n\r\n");
+
+            return Stream\buffer($conn);
+        });
+
+        $response = Block\await($result, $loop, 1.0);
+
+        $this->assertContains("HTTP/1.0 200 OK", $response);
+        $this->assertContains("\r\nContent-Length: 33000\r\n", $response);
+        $this->assertStringEndsWith("\r\n". str_repeat('.', 33000), $response);
 
         $socket->close();
     }
@@ -143,7 +212,7 @@ class FunctionalServerTest extends TestCase
             'tls' => array('verify_peer' => false)
         ));
 
-        $server = new Server(function (RequestInterface $request) {
+        $server = new StreamingServer(function (RequestInterface $request) {
             return new Response(200, array(), (string)$request->getUri());
         });
 
@@ -153,7 +222,7 @@ class FunctionalServerTest extends TestCase
         ));
         $server->listen($socket);
 
-        $result = $connector->connect('tls://' . noScheme($socket->getAddress()))->then(function (ConnectionInterface $conn) {
+        $result = $connector->connect($socket->getAddress())->then(function (ConnectionInterface $conn) {
             $conn->write("GET / HTTP/1.0\r\n\r\n");
 
             return Stream\buffer($conn);
@@ -177,7 +246,7 @@ class FunctionalServerTest extends TestCase
         }
         $connector = new Connector($loop);
 
-        $server = new Server(function (RequestInterface $request) {
+        $server = new StreamingServer(function (RequestInterface $request) {
             return new Response(200, array(), (string)$request->getUri());
         });
 
@@ -207,7 +276,7 @@ class FunctionalServerTest extends TestCase
         }
         $connector = new Connector($loop);
 
-        $server = new Server(function (RequestInterface $request) {
+        $server = new StreamingServer(function (RequestInterface $request) {
             return new Response(200, array(), (string)$request->getUri());
         });
 
@@ -246,13 +315,13 @@ class FunctionalServerTest extends TestCase
             'tls' => array('verify_peer' => false)
         ));
 
-        $server = new Server(function (RequestInterface $request) {
+        $server = new StreamingServer(function (RequestInterface $request) {
             return new Response(200, array(), (string)$request->getUri());
         });
 
         $server->listen($socket);
 
-        $result = $connector->connect('tls://' . noScheme($socket->getAddress()))->then(function (ConnectionInterface $conn) {
+        $result = $connector->connect($socket->getAddress())->then(function (ConnectionInterface $conn) {
             $conn->write("GET / HTTP/1.0\r\nHost: 127.0.0.1\r\n\r\n");
 
             return Stream\buffer($conn);
@@ -285,13 +354,13 @@ class FunctionalServerTest extends TestCase
             'tls' => array('verify_peer' => false)
         ));
 
-        $server = new Server(function (RequestInterface $request) {
+        $server = new StreamingServer(function (RequestInterface $request) {
             return new Response(200, array(), (string)$request->getUri());
         });
 
         $server->listen($socket);
 
-        $result = $connector->connect('tls://' . noScheme($socket->getAddress()))->then(function (ConnectionInterface $conn) {
+        $result = $connector->connect($socket->getAddress())->then(function (ConnectionInterface $conn) {
             $conn->write("GET / HTTP/1.0\r\n\r\n");
 
             return Stream\buffer($conn);
@@ -315,7 +384,7 @@ class FunctionalServerTest extends TestCase
         }
         $connector = new Connector($loop);
 
-        $server = new Server(function (RequestInterface $request) {
+        $server = new StreamingServer(function (RequestInterface $request) {
             return new Response(200, array(), (string)$request->getUri());
         });
 
@@ -354,13 +423,13 @@ class FunctionalServerTest extends TestCase
             'tls' => array('verify_peer' => false)
         ));
 
-        $server = new Server(function (RequestInterface $request) {
+        $server = new StreamingServer(function (RequestInterface $request) {
             return new Response(200, array(), (string)$request->getUri() . 'x' . $request->getHeaderLine('Host'));
         });
 
         $server->listen($socket);
 
-        $result = $connector->connect('tls://' . noScheme($socket->getAddress()))->then(function (ConnectionInterface $conn) {
+        $result = $connector->connect($socket->getAddress())->then(function (ConnectionInterface $conn) {
             $conn->write("GET / HTTP/1.0\r\nHost: " . noScheme($conn->getRemoteAddress()) . "\r\n\r\n");
 
             return Stream\buffer($conn);
@@ -382,14 +451,14 @@ class FunctionalServerTest extends TestCase
         $stream = new ThroughStream();
         $stream->close();
 
-        $server = new Server(function (RequestInterface $request) use ($stream) {
+        $server = new StreamingServer(function (RequestInterface $request) use ($stream) {
             return new Response(200, array(), $stream);
         });
 
         $socket = new Socket(0, $loop);
         $server->listen($socket);
 
-        $result = $connector->connect($socket->getAddress())->then(function (ConnectionInterface $conn) use ($loop) {
+        $result = $connector->connect($socket->getAddress())->then(function (ConnectionInterface $conn) {
             $conn->write("GET / HTTP/1.0\r\n\r\n");
 
             return Stream\buffer($conn);
@@ -403,75 +472,90 @@ class FunctionalServerTest extends TestCase
         $socket->close();
     }
 
-    public function testStreamFromRequestHandlerWillBeClosedIfConnectionClosesWhileSendingBody()
+    public function testRequestHandlerWillReceiveCloseEventIfConnectionClosesWhileSendingBody()
     {
         $loop = Factory::create();
         $connector = new Connector($loop);
 
-        $stream = new ThroughStream();
-        $stream->on('close', $this->expectCallableOnce());
-
-        $server = new Server(function (RequestInterface $request) use ($stream) {
-            return new Response(200, array(), $stream);
+        $once = $this->expectCallableOnce();
+        $server = new StreamingServer(function (RequestInterface $request) use ($once) {
+            $request->getBody()->on('close', $once);
         });
 
         $socket = new Socket(0, $loop);
         $server->listen($socket);
 
-        $result = $connector->connect($socket->getAddress())->then(function (ConnectionInterface $conn) use ($loop) {
+        $connector->connect($socket->getAddress())->then(function (ConnectionInterface $conn) use ($loop) {
             $conn->write("GET / HTTP/1.0\r\nContent-Length: 100\r\n\r\n");
 
-            $loop->addTimer(0.1, function() use ($conn) {
+            $loop->addTimer(0.001, function() use ($conn) {
                 $conn->end();
             });
-
-            return Stream\buffer($conn);
         });
 
-        $response = Block\await($result, $loop, 1.0);
-
-        $this->assertStringStartsWith("HTTP/1.0 200 OK", $response);
-        $this->assertStringEndsWith("\r\n\r\n", $response);
+        Block\sleep(0.1, $loop);
 
         $socket->close();
     }
 
-    public function testStreamFromRequestHandlerWillBeClosedIfConnectionClosesButWillOnlyBeDetectedOnNextWrite()
+    public function testStreamFromRequestHandlerWillBeClosedIfConnectionClosesWhileSendingRequestBody()
     {
         $loop = Factory::create();
         $connector = new Connector($loop);
 
         $stream = new ThroughStream();
-        $stream->on('close', $this->expectCallableOnce());
 
-        $server = new Server(function (RequestInterface $request) use ($stream) {
+        $server = new StreamingServer(function (RequestInterface $request) use ($stream) {
             return new Response(200, array(), $stream);
         });
 
         $socket = new Socket(0, $loop);
         $server->listen($socket);
 
-        $result = $connector->connect($socket->getAddress())->then(function (ConnectionInterface $conn) use ($loop) {
-            $conn->write("GET / HTTP/1.0\r\n\r\n");
+        $connector->connect($socket->getAddress())->then(function (ConnectionInterface $conn) use ($loop) {
+            $conn->write("GET / HTTP/1.0\r\nContent-Length: 100\r\n\r\n");
 
-            $loop->addTimer(0.1, function() use ($conn) {
+            $loop->addTimer(0.001, function() use ($conn) {
                 $conn->end();
             });
-
-            return Stream\buffer($conn);
         });
 
-        $response = Block\await($result, $loop, 1.0);
-
-        $stream->write('nope');
-        Block\sleep(0.1, $loop);
-        $stream->write('nope');
-        Block\sleep(0.1, $loop);
-
-        $this->assertStringStartsWith("HTTP/1.0 200 OK", $response);
-        $this->assertStringEndsWith("\r\n\r\n", $response);
+        // stream will be closed within 0.1s
+        $ret = Block\await(Stream\first($stream, 'close'), $loop, 0.1);
 
         $socket->close();
+
+        $this->assertNull($ret);
+    }
+
+    public function testStreamFromRequestHandlerWillBeClosedIfConnectionCloses()
+    {
+        $loop = Factory::create();
+        $connector = new Connector($loop);
+
+        $stream = new ThroughStream();
+
+        $server = new StreamingServer(function (RequestInterface $request) use ($stream) {
+            return new Response(200, array(), $stream);
+        });
+
+        $socket = new Socket(0, $loop);
+        $server->listen($socket);
+
+        $connector->connect($socket->getAddress())->then(function (ConnectionInterface $conn) use ($loop) {
+            $conn->write("GET / HTTP/1.0\r\n\r\n");
+
+            $loop->addTimer(0.1, function () use ($conn) {
+                $conn->close();
+            });
+        });
+
+        // await response stream to be closed
+        $ret = Block\await(Stream\first($stream, 'close'), $loop, 1.0);
+
+        $socket->close();
+
+        $this->assertNull($ret);
     }
 
     public function testUpgradeWithThroughStreamReturnsDataAsGiven()
@@ -479,7 +563,7 @@ class FunctionalServerTest extends TestCase
         $loop = Factory::create();
         $connector = new Connector($loop);
 
-        $server = new Server(function (RequestInterface $request) use ($loop) {
+        $server = new StreamingServer(function (RequestInterface $request) use ($loop) {
             $stream = new ThroughStream();
 
             $loop->addTimer(0.1, function () use ($stream) {
@@ -511,12 +595,50 @@ class FunctionalServerTest extends TestCase
         $socket->close();
     }
 
+    public function testUpgradeWithRequestBodyAndThroughStreamReturnsDataAsGiven()
+    {
+        $loop = Factory::create();
+        $connector = new Connector($loop);
+
+        $server = new StreamingServer(function (RequestInterface $request) use ($loop) {
+            $stream = new ThroughStream();
+
+            $loop->addTimer(0.1, function () use ($stream) {
+                $stream->end();
+            });
+
+            return new Response(101, array('Upgrade' => 'echo'), $stream);
+        });
+
+        $socket = new Socket(0, $loop);
+        $server->listen($socket);
+
+        $result = $connector->connect($socket->getAddress())->then(function (ConnectionInterface $conn) {
+            $conn->write("POST / HTTP/1.1\r\nHost: example.com:80\r\nUpgrade: echo\r\nContent-Length: 3\r\n\r\n");
+            $conn->write('hoh');
+
+            $conn->once('data', function () use ($conn) {
+                $conn->write('hello');
+                $conn->write('world');
+            });
+
+            return Stream\buffer($conn);
+        });
+
+        $response = Block\await($result, $loop, 1.0);
+
+        $this->assertStringStartsWith("HTTP/1.1 101 Switching Protocols\r\n", $response);
+        $this->assertStringEndsWith("\r\n\r\nhelloworld", $response);
+
+        $socket->close();
+    }
+
     public function testConnectWithThroughStreamReturnsDataAsGiven()
     {
         $loop = Factory::create();
         $connector = new Connector($loop);
 
-        $server = new Server(function (RequestInterface $request) use ($loop) {
+        $server = new StreamingServer(function (RequestInterface $request) use ($loop) {
             $stream = new ThroughStream();
 
             $loop->addTimer(0.1, function () use ($stream) {
@@ -553,14 +675,14 @@ class FunctionalServerTest extends TestCase
         $loop = Factory::create();
         $connector = new Connector($loop);
 
-        $server = new Server(function (RequestInterface $request) use ($loop) {
+        $server = new StreamingServer(function (RequestInterface $request) use ($loop) {
             $stream = new ThroughStream();
 
             $loop->addTimer(0.1, function () use ($stream) {
                 $stream->end();
             });
 
-            return new Promise(function ($resolve) use ($loop, $stream) {
+            return new Promise\Promise(function ($resolve) use ($loop, $stream) {
                 $loop->addTimer(0.001, function () use ($resolve, $stream) {
                     $resolve(new Response(200, array(), $stream));
                 });
@@ -594,7 +716,7 @@ class FunctionalServerTest extends TestCase
         $loop = Factory::create();
         $connector = new Connector($loop);
 
-        $server = new Server(function (RequestInterface $request) {
+        $server = new StreamingServer(function (RequestInterface $request) {
             $stream = new ThroughStream();
             $stream->close();
 
@@ -622,6 +744,53 @@ class FunctionalServerTest extends TestCase
 
         $socket->close();
     }
+
+    public function testLimitConcurrentRequestsMiddlewareRequestStreamPausing()
+    {
+        $loop = Factory::create();
+        $connector = new Connector($loop);
+
+        $server = new StreamingServer(array(
+            new LimitConcurrentRequestsMiddleware(5),
+            new RequestBodyBufferMiddleware(16 * 1024 * 1024), // 16 MiB
+            function (ServerRequestInterface $request, $next) use ($loop) {
+                return new Promise\Promise(function ($resolve) use ($request, $loop, $next) {
+                    $loop->addTimer(0.1, function () use ($request, $resolve, $next) {
+                        $resolve($next($request));
+                    });
+                });
+            },
+            function (ServerRequestInterface $request) {
+                return new Response(200, array(), (string)strlen((string)$request->getBody()));
+            }
+        ));
+
+        $socket = new Socket(0, $loop);
+        $server->listen($socket);
+
+        $result = array();
+        for ($i = 0; $i < 6; $i++) {
+            $result[] = $connector->connect($socket->getAddress())->then(function (ConnectionInterface $conn) {
+                $conn->write(
+                    "GET / HTTP/1.0\r\nContent-Length: 1024\r\nHost: " . noScheme($conn->getRemoteAddress()) . "\r\n\r\n" .
+                    str_repeat('a', 1024) .
+                    "\r\n\r\n"
+                );
+
+                return Stream\buffer($conn);
+            });
+        }
+
+        $responses = Block\await(Promise\all($result), $loop, 1.0);
+
+        foreach ($responses as $response) {
+            $this->assertContains("HTTP/1.0 200 OK", $response, $response);
+            $this->assertTrue(substr($response, -4) == 1024, $response);
+        }
+
+        $socket->close();
+    }
+
 }
 
 function noScheme($uri)

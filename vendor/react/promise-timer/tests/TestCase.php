@@ -2,10 +2,10 @@
 
 namespace React\Tests\Promise\Timer;
 
+use PHPUnit\Framework\TestCase as BaseTestCase;
 use React\EventLoop\Factory;
-use PHPUnit_Framework_TestCase;
 
-class TestCase extends PHPUnit_Framework_TestCase
+class TestCase extends BaseTestCase
 {
     protected $loop;
 
@@ -41,7 +41,7 @@ class TestCase extends PHPUnit_Framework_TestCase
      */
     protected function createCallableMock()
     {
-        return $this->getMock('React\Tests\Promise\Timer\CallableStub');
+        return $this->getMockBuilder('React\Tests\Promise\Timer\CallableStub')->getMock();
     }
 
     protected function expectPromiseRejected($promise)
