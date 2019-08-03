@@ -30,6 +30,7 @@ if (PHP_OS !== 'WINNT') {
     //用户重载配置文件-USR2
     Signal::register(SIGUSR2, function($signal){
         echo "reload task config...", PHP_EOL;
+        
         Main::reloadTask();
     });
     //接收子进程结束的信号
