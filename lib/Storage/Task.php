@@ -1,5 +1,5 @@
 <?php
-namespace Stroage;
+namespace Storage;
 
 use Stroage\Exception\TaskException;
 

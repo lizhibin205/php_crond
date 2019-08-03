@@ -1,5 +1,5 @@
 <?php
-namespace Stroage\Exception;
+namespace Storage\Exception;
 
 class TaskException extends \Exception
 {

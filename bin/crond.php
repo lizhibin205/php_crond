@@ -4,8 +4,8 @@
  * @author 黎志斌
  * @daate 2017年5月25日
  */
+use Crond\Crond;
 use Crond\Signal;
-use Crond\Task\Main;
 
 if (PHP_SAPI !== 'cli') {
     echo 'php crontab must run in cli!', PHP_EOL;
@@ -39,4 +39,4 @@ if (PHP_OS !== 'WINNT') {
     });
 }
 
-Main::start();
+Crond::start();

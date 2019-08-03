@@ -1,11 +1,9 @@
 <?php
-namespace Crond\Task;
+namespace Crond;
 
-use Http\Server;
 use Symfony\Component\Process\Process;
-use Psr\Http\Message\ServerRequestInterface;
 
-class Main
+class Crond
 {
     /**
      * 存储Main对象的单例
@@ -34,8 +32,12 @@ class Main
      */
     public static function start()
     {
-        //获取Crond的配置信息
-        Config::read();
+        //获取Crond启动配置
+        $crondConfig = new \Crond\Config();
+        //获取任务列表
+        $taskList = new \Storage\TaskList();
+
+        exit;
         //初始化进程管理类
         $crondTaskMain = self::getInstance();
         //创建PID文件
@@ -99,7 +101,7 @@ class Main
                 pcntl_signal_dispatch();
             }
             //信号处理结束
-            if (!Main::getInstance()->alive()) {
+            if (!Crond::getInstance()->alive()) {
                 $loop->cancelTimer($timer);
                 $loop->stop();
             }
@@ -178,7 +180,7 @@ class Main
 
     /**
      * 初始化定时任务对象实例
-     * @return Main
+     * @return Crond
      */
     private static function getInstance()
     {

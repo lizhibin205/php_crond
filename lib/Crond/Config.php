@@ -9,39 +9,32 @@ namespace Crond;
 class Config
 {
     /**
-     * 数据配置
+     * Crond服务配置数据
      * @var array
      */
-    private static $configData = null;
+    private $configData = [];
+
+    public function __construct()
+    {
+        $filename = PROJECT_ROOT . "/config/base.php";
+        if (is_file($filename)) {
+            $this->configData = include $filename;
+        } else {
+            throw new \RuntimeException("php_crond base config file not exists!");
+        }
+    }
 
     /**
      * 获取php_crond配置
      * @param string $name 属性名
      */
-    public static function attr($name)
+    public function attr($name)
     {
-        if (is_null(self::$configData)) {
-            self::$configData = self::getConfig();
-        }
-        if (isset(self::$configData[$name])) {
-            return self::$configData[$name];
+        $configData = $this->configData;
+        if (isset($configData[$name])) {
+            return $configData[$name];
         } else {
             throw new \RuntimeException("php_crond base config[{$name}] not exists!");
-        }
-    }
-
-    /**
-     * 获取配置文件中的内容
-     * @throws \RuntimeException
-     * @return void
-     */
-    private static function getConfig()
-    {
-        $filename = PROJECT_ROOT . "/config/base.php";
-        if (is_file($filename)) {
-            return include $filename;
-        } else {
-            throw new \RuntimeException("php_crond base config file not exists!");
         }
     }
 }

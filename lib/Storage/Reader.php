@@ -1,5 +1,5 @@
 <?php
-namespace Stroage;
+namespace Storage;
 
 class Reader
 {
