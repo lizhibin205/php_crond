@@ -13,5 +13,15 @@ class TaskList
     {
         
     }
+
+    /**
+     * 查找符合条件的任务
+     * @return array
+     */
+    public function findTask($execSecond, $execMintue, $execHour, $execDay, $execMonth, $execWeek)
+    {
+        $matchTaskList = [];
+        return $matchTaskList;
+    }
 }
 
