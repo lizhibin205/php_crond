@@ -2,19 +2,54 @@
 
 namespace React\Tests\Stream;
 
+use Clue\StreamFilter as Filter;
 use React\Stream\DuplexResourceStream;
-use React\EventLoop as rel;
 use React\Stream\ReadableResourceStream;
+use React\EventLoop\ExtEventLoop;
+use React\EventLoop\ExtLibeventLoop;
+use React\EventLoop\ExtLibevLoop;
+use React\EventLoop\LoopInterface;
+use React\EventLoop\LibEventLoop;
+use React\EventLoop\LibEvLoop;
+use React\EventLoop\StreamSelectLoop;
 
 class DuplexResourceStreamIntegrationTest extends TestCase
 {
     public function loopProvider()
     {
         return array(
-            array(function() { return true; }, function() { return new rel\StreamSelectLoop; }),
-            array(function() { return function_exists('event_base_new'); }, function() { return new rel\LibEventLoop; }),
-            array(function() { return class_exists('libev\EventLoop'); }, function() { return new rel\LibEvLoop; }),
-            array(function() { return class_exists('EventBase'); }, function() { return new rel\ExtEventLoop; })
+            array(
+                function() {
+                    return true;
+                },
+                function () {
+                    return new StreamSelectLoop();
+                }
+            ),
+            array(
+                function () {
+                    return function_exists('event_base_new');
+                },
+                function () {
+                    return class_exists('React\EventLoop\ExtLibeventLoop') ? new ExtLibeventLoop() : new LibEventLoop();
+                }
+            ),
+            array(
+                function () {
+                    return class_exists('libev\EventLoop');
+                },
+                function () {
+                    return class_exists('React\EventLoop\ExtLibevLoop') ? new ExtLibevLoop() : new LibEvLoop();
+                }
+            ),
+            array(
+                function () {
+                    return class_exists('EventBase') && class_exists('React\EventLoop\ExtEventLoop');
+                },
+                function () {
+                    return new ExtEventLoop();
+                }
+            )
         );
     }
 
@@ -44,9 +79,9 @@ class DuplexResourceStreamIntegrationTest extends TestCase
 
         $streamA->write($testString);
 
-        $loop->tick();
-        $loop->tick();
-        $loop->tick();
+        $this->loopTick($loop);
+        $this->loopTick($loop);
+        $this->loopTick($loop);
 
         $streamA->close();
         $streamB->close();
@@ -248,7 +283,7 @@ class DuplexResourceStreamIntegrationTest extends TestCase
 
         $loop = $loopFactory();
 
-        $stream = new ReadableResourceStream(popen('echo -n a;sleep 0.1;echo -n b;sleep 0.1;echo -n c', 'r'), $loop);
+        $stream = new ReadableResourceStream(popen('echo a;sleep 0.1;echo b;sleep 0.1;echo c', 'r'), $loop);
 
         $buffer = '';
         $stream->on('data', function ($chunk) use (&$buffer) {
@@ -260,7 +295,7 @@ class DuplexResourceStreamIntegrationTest extends TestCase
 
         $loop->run();
 
-        $this->assertEquals('abc', $buffer);
+        $this->assertEquals("a\n" . "b\n" . "c\n", $buffer);
     }
 
     /**
@@ -305,6 +340,51 @@ class DuplexResourceStreamIntegrationTest extends TestCase
         $stream->on('end', $this->expectCallableOnce());
         $stream->on('error', $this->expectCallableNever());
 
+        $loop->run();
+    }
+
+    /**
+     * @covers React\Stream\ReadableResourceStream::handleData
+     * @dataProvider loopProvider
+     */
+    public function testEmptyReadShouldntFcloseStream($condition, $loopFactory)
+    {
+        if (true !== $condition()) {
+            return $this->markTestSkipped('Loop implementation not available');
+        }
+
+        $server = stream_socket_server('tcp://127.0.0.1:0');
+
+        $client = stream_socket_client(stream_socket_get_name($server, false));
+        $stream = stream_socket_accept($server);
+
+
+        // add a filter which returns an error when encountering an 'a' when reading
+        Filter\append($stream, function ($chunk) {
+            return '';
+        }, STREAM_FILTER_READ);
+
+        $loop = $loopFactory();
+
+        $conn = new DuplexResourceStream($stream, $loop);
+        $conn->on('error', $this->expectCallableNever());
+        $conn->on('data', $this->expectCallableNever());
+        $conn->on('end', $this->expectCallableNever());
+
+        fwrite($client, "foobar\n");
+
+        $conn->handleData($stream);
+
+        fclose($stream);
+        fclose($client);
+        fclose($server);
+    }
+
+    private function loopTick(LoopInterface $loop)
+    {
+        $loop->addTimer(0, function () use ($loop) {
+            $loop->stop();
+        });
         $loop->run();
     }
 }

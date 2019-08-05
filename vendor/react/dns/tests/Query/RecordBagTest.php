@@ -2,11 +2,12 @@
 
 namespace React\Tests\Dns\Query;
 
+use PHPUnit\Framework\TestCase;
 use React\Dns\Query\RecordBag;
 use React\Dns\Model\Message;
 use React\Dns\Model\Record;
 
-class RecordBagTest extends \PHPUnit_Framework_TestCase
+class RecordBagTest extends TestCase
 {
     /**
     * @covers React\Dns\Query\RecordBag
@@ -35,6 +36,25 @@ class RecordBagTest extends \PHPUnit_Framework_TestCase
         $this->assertSame('igor.io', $records[0]->name);
         $this->assertSame(Message::TYPE_A, $records[0]->type);
         $this->assertSame(Message::CLASS_IN, $records[0]->class);
+    }
+
+    /**
+     * @covers React\Dns\Query\RecordBag
+     * @test
+     */
+    public function setShouldAcceptMxRecord()
+    {
+        $currentTime = 1345656451;
+
+        $recordBag = new RecordBag();
+        $recordBag->set($currentTime, new Record('igor.io', Message::TYPE_MX, Message::CLASS_IN, 3600, array('priority' => 10, 'target' => 'igor.io')));
+
+        $records = $recordBag->all();
+        $this->assertCount(1, $records);
+        $this->assertSame('igor.io', $records[0]->name);
+        $this->assertSame(Message::TYPE_MX, $records[0]->type);
+        $this->assertSame(Message::CLASS_IN, $records[0]->class);
+        $this->assertSame(array('priority' => 10, 'target' => 'igor.io'), $records[0]->data);
     }
 
     /**

@@ -1,5 +1,130 @@
 # Changelog
 
+## 0.4.17 (2019-04-01)
+
+*   Feature: Support parsing `authority` and `additional` records from DNS response.
+    (#123 by @clue)
+
+*   Feature: Support dumping records as part of outgoing binary DNS message.
+    (#124 by @clue)
+
+*   Feature: Forward compatibility with upcoming Cache v0.6 and Cache v1.0
+    (#121 by @clue)
+
+*   Improve test suite to add forward compatibility with PHPUnit 7,
+    test against PHP 7.3 and use legacy PHPUnit 5 on legacy HHVM.
+    (#122 by @clue)
+
+## 0.4.16 (2018-11-11)
+
+*   Feature: Improve promise cancellation for DNS lookup retries and clean up any garbage references.
+    (#118 by @clue)
+
+*   Fix: Reject parsing malformed DNS response messages such as incomplete DNS response messages,
+    malformed record data or malformed compressed domain name labels.
+    (#115 and #117 by @clue)
+
+*   Fix: Fix interpretation of TTL as UINT32 with most significant bit unset.
+    (#116 by @clue)
+
+*   Fix: Fix caching advanced MX/SRV/TXT/SOA structures.
+    (#112 by @clue)
+
+## 0.4.15 (2018-07-02)
+
+*   Feature: Add `resolveAll()` method to support custom query types in `Resolver`.
+    (#110 by @clue and @WyriHaximus)
+
+    ```php
+    $resolver->resolveAll('reactphp.org', Message::TYPE_AAAA)->then(function ($ips) {
+        echo 'IPv6 addresses for reactphp.org ' . implode(', ', $ips) . PHP_EOL;
+    });
+    ```
+
+*   Feature: Support parsing `NS`, `TXT`, `MX`, `SOA` and `SRV` records.
+    (#104, #105, #106, #107 and #108 by @clue)
+
+*   Feature: Add support for `Message::TYPE_ANY` and parse unknown types as binary data.
+    (#104 by @clue)
+
+*   Feature: Improve error messages for failed queries and improve documentation.
+    (#109 by @clue)
+
+*   Feature: Add reverse DNS lookup example.
+    (#111 by @clue)
+
+## 0.4.14 (2018-06-26)
+
+*   Feature: Add `UdpTransportExecutor`, validate incoming DNS response messages
+    to avoid cache poisoning attacks and deprecate legacy `Executor`.
+    (#101 and #103 by @clue)
+
+*   Feature: Forward compatibility with Cache 0.5
+    (#102 by @clue)
+
+*   Deprecate legacy `Query::$currentTime` and binary parser data attributes to clean up and simplify API.
+    (#99 by @clue)
+
+## 0.4.13 (2018-02-27)
+
+*   Add `Config::loadSystemConfigBlocking()` to load default system config
+    and support parsing DNS config on all supported platforms
+    (`/etc/resolv.conf` on Unix/Linux/Mac and WMIC on Windows)
+    (#92, #93, #94 and #95 by @clue)
+
+    ```php
+    $config = Config::loadSystemConfigBlocking();
+    $server = $config->nameservers ? reset($config->nameservers) : '8.8.8.8';
+    ```
+
+*   Remove unneeded cyclic dependency on react/socket
+    (#96 by @clue)
+
+## 0.4.12 (2018-01-14)
+
+*   Improve test suite by adding forward compatibility with PHPUnit 6,
+    test against PHP 7.2, fix forward compatibility with upcoming EventLoop releases,
+    add test group to skip integration tests relying on internet connection
+    and add minor documentation improvements.
+    (#85 and #87 by @carusogabriel, #88 and #89 by @clue and #83 by @jsor)
+
+## 0.4.11 (2017-08-25)
+
+*   Feature: Support resolving from default hosts file
+    (#75, #76 and #77 by @clue)
+
+    This means that resolving hosts such as `localhost` will now work as
+    expected across all platforms with no changes required:
+
+    ```php
+    $resolver->resolve('localhost')->then(function ($ip) {
+        echo 'IP: ' . $ip;
+    });
+    ```
+
+    The new `HostsExecutor` exists for advanced usage and is otherwise used
+    internally for this feature.
+
+## 0.4.10 (2017-08-10)
+
+* Feature: Forward compatibility with EventLoop v1.0 and v0.5 and 
+  lock minimum dependencies and work around circular dependency for tests
+  (#70 and #71 by @clue)
+
+* Fix: Work around DNS timeout issues for Windows users
+  (#74 by @clue)
+
+* Documentation and examples for advanced usage
+  (#66 by @WyriHaximus)
+
+* Remove broken TCP code, do not retry with invalid TCP query
+  (#73 by @clue)
+
+* Improve test suite by fixing HHVM build for now again and ignore future HHVM build errors and
+  lock Travis distro so new defaults will not break the build and
+  fix failing tests for PHP 7.1
+  (#68 by @WyriHaximus and #69 and #72 by @clue)
+
 ## 0.4.9 (2017-05-01)
 
 * Feature: Forward compatibility with upcoming Socket v1.0 and v0.8

@@ -13,7 +13,9 @@ $counter = 0;
 $server = new Server(function (ServerRequestInterface $request) use (&$counter) {
     return new Response(
         200,
-        array('Content-Type' => 'text/plain'),
+        array(
+            'Content-Type' => 'text/plain'
+        ),
         "Welcome number " . ++$counter . "!\n"
     );
 });

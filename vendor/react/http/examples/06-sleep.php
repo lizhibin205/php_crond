@@ -11,11 +11,13 @@ require __DIR__ . '/../vendor/autoload.php';
 $loop = Factory::create();
 
 $server = new Server(function (ServerRequestInterface $request) use ($loop) {
-    return new Promise(function ($resolve, $reject) use ($request, $loop) {
-        $loop->addTimer(1.5, function() use ($loop, $resolve) {
+    return new Promise(function ($resolve, $reject) use ($loop) {
+        $loop->addTimer(1.5, function() use ($resolve) {
             $response = new Response(
                 200,
-                array('Content-Type' => 'text/plain'),
+                array(
+                    'Content-Type' => 'text/plain'
+                ),
                 "Hello world"
             );
             $resolve($response);

@@ -2,3 +2,7 @@ logs/
 .settings/
 .buildpath
 .classpath
+.project
+config/base.php
+config/task.php
+examples/

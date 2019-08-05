@@ -1,5 +1,237 @@
 # Changelog
 
+## 1.2.1 (2019-06-03)
+
+*   Avoid uneeded fragmented TLS work around for PHP 7.3.3+ and 
+    work around failing test case detecting EOF on TLS 1.3 socket streams.
+    (#201 and #202 by @clue)
+
+*   Improve TLS certificate/passphrase example.
+    (#190 by @jsor)
+
+## 1.2.0 (2019-01-07)
+
+*   Feature / Fix: Improve TLS 1.3 support.
+    (#186 by @clue)
+
+    TLS 1.3 is now an official standard as of August 2018! :tada:
+    The protocol has major improvements in the areas of security, performance, and privacy.
+    TLS 1.3 is supported by default as of [OpenSSL 1.1.1](https://www.openssl.org/blog/blog/2018/09/11/release111/).
+    For example, this version ships with Ubuntu 18.10 (and newer) by default, meaning that recent installations support TLS 1.3 out of the box :shipit:
+
+*   Fix: Avoid possibility of missing remote address when TLS handshake fails.
+    (#188 by @clue)
+
+*   Improve performance by prefixing all global functions calls with `\` to skip the look up and resolve process and go straight to the global function.
+    (#183 by @WyriHaximus)
+
+*   Update documentation to use full class names with namespaces.
+    (#187 by @clue)
+
+*   Improve test suite to avoid some possible race conditions,
+    test against PHP 7.3 on Travis and
+    use dedicated `assertInstanceOf()` assertions.
+    (#185 by @clue, #178 by @WyriHaximus and #181 by @carusogabriel)
+
+## 1.1.0 (2018-10-01)
+
+*   Feature: Improve error reporting for failed connection attempts and improve
+    cancellation forwarding during DNS lookup, TCP/IP connection or TLS handshake.
+    (#168, #169, #170, #171, #176 and #177 by @clue)
+
+    All error messages now always contain a reference to the remote URI to give
+    more details which connection actually failed and the reason for this error.
+    Accordingly, failures during DNS lookup will now mention both the remote URI
+    as well as the DNS error reason. TCP/IP connection issues and errors during
+    a secure TLS handshake will both mention the remote URI as well as the
+    underlying socket error. Similarly, lost/dropped connections during a TLS
+    handshake will now report a lost connection instead of an empty error reason.
+
+    For most common use cases this means that simply reporting the `Exception`
+    message should give the most relevant details for any connection issues:
+
+    ```php
+    $promise = $connector->connect('tls://example.com:443');
+    $promise->then(function (ConnectionInterface $conn) use ($loop) {
+        // …
+    }, function (Exception $e) {
+        echo $e->getMessage();
+    });
+    ```
+
+## 1.0.0 (2018-07-11)
+
+*   First stable LTS release, now following [SemVer](https://semver.org/).
+    We'd like to emphasize that this component is production ready and battle-tested.
+    We plan to support all long-term support (LTS) releases for at least 24 months,
+    so you have a rock-solid foundation to build on top of.
+
+>   Contains no other changes, so it's actually fully compatible with the v0.8.12 release.
+
+## 0.8.12 (2018-06-11)
+
+*   Feature: Improve memory consumption for failed and cancelled connection attempts.
+    (#161 by @clue)
+
+*   Improve test suite to fix Travis config to test against legacy PHP 5.3 again.
+    (#162 by @clue)
+
+## 0.8.11 (2018-04-24)
+
+*   Feature: Improve memory consumption for cancelled connection attempts and
+    simplify skipping DNS lookup when connecting to IP addresses.
+    (#159 and #160 by @clue)
+
+## 0.8.10 (2018-02-28)
+
+*   Feature: Update DNS dependency to support loading system default DNS
+    nameserver config on all supported platforms
+    (`/etc/resolv.conf` on Unix/Linux/Mac/Docker/WSL and WMIC on Windows)
+    (#152 by @clue)
+
+    This means that connecting to hosts that are managed by a local DNS server,
+    such as a corporate DNS server or when using Docker containers, will now
+    work as expected across all platforms with no changes required:
+
+    ```php
+    $connector = new Connector($loop);
+    $connector->connect('intranet.example:80')->then(function ($connection) {
+        // …
+    });
+    ```
+
+## 0.8.9 (2018-01-18)
+
+*   Feature: Support explicitly choosing TLS version to negotiate with remote side
+    by respecting `crypto_method` context parameter for all classes.
+    (#149 by @clue)
+
+    By default, all connector and server classes support TLSv1.0+ and exclude
+    support for legacy SSLv2/SSLv3. As of PHP 5.6+ you can also explicitly
+    choose the TLS version you want to negotiate with the remote side:
+
+    ```php
+    // new: now supports 'crypto_method` context parameter for all classes
+    $connector = new Connector($loop, array(
+        'tls' => array(
+            'crypto_method' => STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT
+        )
+    ));
+    ```
+
+*   Minor internal clean up to unify class imports
+    (#148 by @clue)
+
+## 0.8.8 (2018-01-06)
+
+*   Improve test suite by adding test group to skip integration tests relying on
+    internet connection and fix minor documentation typo.
+    (#146 by @clue and #145 by @cn007b)
+
+## 0.8.7 (2017-12-24)
+
+*   Fix: Fix closing socket resource before removing from loop
+    (#141 by @clue)
+
+    This fixes the root cause of an uncaught `Exception` that only manifested
+    itself after the recent Stream v0.7.4 component update and only if you're
+    using `ext-event` (`ExtEventLoop`).
+
+*   Improve test suite by testing against PHP 7.2
+    (#140 by @carusogabriel)
+
+## 0.8.6 (2017-11-18)
+
+*   Feature: Add Unix domain socket (UDS) support to `Server` with `unix://` URI scheme
+    and add advanced `UnixServer` class.
+    (#120 by @andig)
+
+    ```php
+    // new: Server now supports "unix://" scheme
+    $server = new Server('unix:///tmp/server.sock', $loop);
+
+    // new: advanced usage
+    $server = new UnixServer('/tmp/server.sock', $loop);
+    ```
+
+*   Restructure examples to ease getting started
+    (#136 by @clue)
+
+*   Improve test suite by adding forward compatibility with PHPUnit 6 and
+    ignore Mac OS X test failures for now until Travis tests work again
+    (#133 by @gabriel-caruso and #134 by @clue)
+
+## 0.8.5 (2017-10-23)
+
+*   Fix: Work around PHP bug with Unix domain socket (UDS) paths for Mac OS X
+    (#123 by @andig)
+
+*   Fix: Fix `SecureServer` to return `null` URI if server socket is already closed
+    (#129 by @clue)
+
+*   Improve test suite by adding forward compatibility with PHPUnit v5 and
+    forward compatibility with upcoming EventLoop releases in tests and
+    test Mac OS X on Travis
+    (#122 by @andig and #125, #127 and #130 by @clue)
+
+*   Readme improvements
+    (#118 by @jsor)
+
+## 0.8.4 (2017-09-16)
+
+*   Feature: Add `FixedUriConnector` decorator to use fixed, preconfigured URI instead
+    (#117 by @clue)
+
+    This can be useful for consumers that do not support certain URIs, such as
+    when you want to explicitly connect to a Unix domain socket (UDS) path
+    instead of connecting to a default address assumed by an higher-level API:
+
+    ```php
+    $connector = new FixedUriConnector(
+        'unix:///var/run/docker.sock',
+        new UnixConnector($loop)
+    );
+
+    // destination will be ignored, actually connects to Unix domain socket
+    $promise = $connector->connect('localhost:80');
+    ```
+
+## 0.8.3 (2017-09-08)
+
+*   Feature: Reduce memory consumption for failed connections
+    (#113 by @valga)
+
+*   Fix: Work around write chunk size for TLS streams for PHP < 7.1.14
+    (#114 by @clue)
+
+## 0.8.2 (2017-08-25)
+
+*   Feature: Update DNS dependency to support hosts file on all platforms
+    (#112 by @clue)
+
+    This means that connecting to hosts such as `localhost` will now work as
+    expected across all platforms with no changes required:
+
+    ```php
+    $connector = new Connector($loop);
+    $connector->connect('localhost:8080')->then(function ($connection) {
+        // …
+    });
+    ```
+
+## 0.8.1 (2017-08-15)
+
+* Feature: Forward compatibility with upcoming EventLoop v1.0 and v0.5 and
+  target evenement 3.0 a long side 2.0 and 1.0
+  (#104 by @clue and #111 by @WyriHaximus)
+
+* Improve test suite by locking Travis distro so new defaults will not break the build and
+  fix HHVM build for now again and ignore future HHVM build errors
+  (#109 and #110 by @clue)
+
+* Minor documentation fixes
+  (#103 by @christiaan and #108 by @hansott)
+
 ## 0.8.0 (2017-05-09)
 
 * Feature: New `Server` class now acts as a facade for existing server classes

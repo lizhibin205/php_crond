@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.5.0 (2018-06-25)
+
+* Improve documentation by describing what is expected of a class implementing `CacheInterface`. 
+  (#21, #22, #23, #27 by @WyriHaximus)
+
+* Implemented (optional) Least Recently Used (LRU) cache algorithm for `ArrayCache`. 
+  (#26 by @clue)
+
+* Added support for cache expiration (TTL).
+  (#29 by @clue and @WyriHaximus)
+
+* Renamed `remove` to `delete` making it more in line with `PSR-16`. 
+  (#30 by @clue)
+
+## 0.4.2 (2017-12-20)
+
+*   Improve documentation with usage and installation instructions
+    (#10 by @clue)
+
+*   Improve test suite by adding PHPUnit to `require-dev` and
+    add forward compatibility with PHPUnit 5 and PHPUnit 6 and
+    sanitize Composer autoload paths
+    (#14 by @shaunbramley and #12 and #18 by @clue)
+
 ## 0.4.1 (2016-02-25)
 
 * Repository maintenance, split off from main repo, improve test suite and documentation

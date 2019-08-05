@@ -2,6 +2,7 @@
 
 namespace React\Tests\Dns\Query;
 
+use Clue\React\Block;
 use React\Dns\Query\Executor;
 use React\Dns\Query\Query;
 use React\Dns\Model\Message;
@@ -28,7 +29,7 @@ class ExecutorTest extends TestCase
     /** @test */
     public function queryShouldCreateUdpRequest()
     {
-        $timer = $this->getMockBuilder('React\EventLoop\Timer\TimerInterface')->getMock();
+        $timer = $this->createTimerMock();
         $this->loop
             ->expects($this->any())
             ->method('addTimer')
@@ -42,27 +43,17 @@ class ExecutorTest extends TestCase
             ->will($this->returnNewConnectionMock(false));
 
         $query = new Query('igor.io', Message::TYPE_A, Message::CLASS_IN, 1345656451);
-        $this->executor->query('8.8.8.8:53', $query, function () {}, function () {});
+        $this->executor->query('8.8.8.8:53', $query);
     }
 
     /** @test */
-    public function resolveShouldCreateTcpRequestIfRequestIsLargerThan512Bytes()
+    public function resolveShouldRejectIfRequestIsLargerThan512Bytes()
     {
-        $timer = $this->getMockBuilder('React\EventLoop\Timer\TimerInterface')->getMock();
-        $this->loop
-            ->expects($this->any())
-            ->method('addTimer')
-            ->will($this->returnValue($timer));
-
-        $this->executor = $this->createExecutorMock();
-        $this->executor
-            ->expects($this->once())
-            ->method('createConnection')
-            ->with('8.8.8.8:53', 'tcp')
-            ->will($this->returnNewConnectionMock(false));
-
         $query = new Query(str_repeat('a', 512).'.igor.io', Message::TYPE_A, Message::CLASS_IN, 1345656451);
-        $this->executor->query('8.8.8.8:53', $query, function () {}, function () {});
+        $promise = $this->executor->query('8.8.8.8:53', $query);
+
+        $this->setExpectedException('RuntimeException', 'DNS query for ' . $query->name . ' failed: Requested transport "tcp" not available, only UDP is supported in this version');
+        Block\await($promise, $this->loop);
     }
 
     /** @test */
@@ -71,7 +62,7 @@ class ExecutorTest extends TestCase
         $conn = $this->createConnectionMock(false);
         $conn->expects($this->once())->method('close');
 
-        $timer = $this->getMockBuilder('React\EventLoop\Timer\TimerInterface')->getMock();
+        $timer = $this->createTimerMock();
         $this->loop
             ->expects($this->any())
             ->method('addTimer')
@@ -89,17 +80,8 @@ class ExecutorTest extends TestCase
 
         $promise->cancel();
 
-        $errorback = $this->createCallableMock();
-        $errorback
-            ->expects($this->once())
-            ->method('__invoke')
-            ->with($this->logicalAnd(
-                $this->isInstanceOf('React\Dns\Query\CancellationException'),
-                $this->attribute($this->equalTo('DNS query for igor.io has been cancelled'), 'message')
-            )
-        );
-
-        $promise->then($this->expectCallableNever(), $errorback);
+        $this->setExpectedException('React\Dns\Query\CancellationException', 'DNS query for igor.io has been cancelled');
+        Block\await($promise, $this->loop);
     }
 
     /** @test */
@@ -112,26 +94,18 @@ class ExecutorTest extends TestCase
         $this->executor = new Executor($this->loop, $this->parser, $this->dumper, null);
 
         $query = new Query('igor.io', Message::TYPE_A, Message::CLASS_IN, 1345656451);
-        $promise = $this->executor->query('8.8.8.8:53', $query);
+        $promise = $this->executor->query('127.0.0.1:53', $query);
 
         $promise->cancel();
 
-        $errorback = $this->createCallableMock();
-        $errorback
-            ->expects($this->once())
-            ->method('__invoke')
-            ->with($this->logicalAnd(
-                $this->isInstanceOf('React\Dns\Query\CancellationException'),
-                $this->attribute($this->equalTo('DNS query for igor.io has been cancelled'), 'message')
-            ));
-
-        $promise->then($this->expectCallableNever(), $errorback);
+        $this->setExpectedException('React\Dns\Query\CancellationException', 'DNS query for igor.io has been cancelled');
+        Block\await($promise, $this->loop);
     }
 
     /** @test */
-    public function resolveShouldRetryWithTcpIfResponseIsTruncated()
+    public function resolveShouldRejectIfResponseIsTruncated()
     {
-        $timer = $this->getMockBuilder('React\EventLoop\Timer\TimerInterface')->getMock();
+        $timer = $this->createTimerMock();
 
         $this->loop
             ->expects($this->any())
@@ -139,70 +113,27 @@ class ExecutorTest extends TestCase
             ->will($this->returnValue($timer));
 
         $this->parser
-            ->expects($this->at(0))
+            ->expects($this->once())
             ->method('parseMessage')
             ->will($this->returnTruncatedResponse());
-        $this->parser
-            ->expects($this->at(1))
-            ->method('parseMessage')
-            ->will($this->returnStandardResponse());
 
         $this->executor = $this->createExecutorMock();
         $this->executor
-            ->expects($this->at(0))
+            ->expects($this->once())
             ->method('createConnection')
             ->with('8.8.8.8:53', 'udp')
             ->will($this->returnNewConnectionMock());
-        $this->executor
-            ->expects($this->at(1))
-            ->method('createConnection')
-            ->with('8.8.8.8:53', 'tcp')
-            ->will($this->returnNewConnectionMock());
 
         $query = new Query('igor.io', Message::TYPE_A, Message::CLASS_IN, 1345656451);
-        $this->executor->query('8.8.8.8:53', $query, function () {}, function () {});
+        $this->executor->query('8.8.8.8:53', $query);
     }
 
     /** @test */
-    public function resolveShouldRetryWithTcpIfUdpThrows()
+    public function resolveShouldFailIfUdpThrow()
     {
-        $timer = $this->getMockBuilder('React\EventLoop\Timer\TimerInterface')->getMock();
-
         $this->loop
-            ->expects($this->once())
-            ->method('addTimer')
-            ->will($this->returnValue($timer));
-
-        $this->parser
-            ->expects($this->once())
-            ->method('parseMessage')
-            ->will($this->returnStandardResponse());
-
-        $this->executor = $this->createExecutorMock();
-        $this->executor
-            ->expects($this->at(0))
-            ->method('createConnection')
-            ->with('8.8.8.8:53', 'udp')
-            ->will($this->throwException(new \Exception()));
-        $this->executor
-            ->expects($this->at(1))
-            ->method('createConnection')
-            ->with('8.8.8.8:53', 'tcp')
-            ->will($this->returnNewConnectionMock());
-
-        $query = new Query('igor.io', Message::TYPE_A, Message::CLASS_IN, 1345656451);
-        $this->executor->query('8.8.8.8:53', $query, function () {}, function () {});
-    }
-
-    /** @test */
-    public function resolveShouldFailIfBothUdpAndTcpThrow()
-    {
-        $timer = $this->getMockBuilder('React\EventLoop\Timer\TimerInterface')->getMock();
-
-        $this->loop
-            ->expects($this->once())
-            ->method('addTimer')
-            ->will($this->returnValue($timer));
+            ->expects($this->never())
+            ->method('addTimer');
 
         $this->parser
             ->expects($this->never())
@@ -210,65 +141,16 @@ class ExecutorTest extends TestCase
 
         $this->executor = $this->createExecutorMock();
         $this->executor
-            ->expects($this->at(0))
+            ->expects($this->once())
             ->method('createConnection')
             ->with('8.8.8.8:53', 'udp')
-            ->will($this->throwException(new \Exception()));
-        $this->executor
-            ->expects($this->at(1))
-            ->method('createConnection')
-            ->with('8.8.8.8:53', 'tcp')
-            ->will($this->throwException(new \Exception()));
+            ->will($this->throwException(new \Exception('Nope')));
 
         $query = new Query('igor.io', Message::TYPE_A, Message::CLASS_IN, 1345656451);
-        $promise = $this->executor->query('8.8.8.8:53', $query, function () {}, function () {});
+        $promise = $this->executor->query('8.8.8.8:53', $query);
 
-        $mock = $this->createCallableMock();
-        $mock
-            ->expects($this->once())
-            ->method('__invoke')
-            ->with($this->callback(function($e) {
-                return $e instanceof \RuntimeException &&
-                    strpos($e->getMessage(), 'Unable to connect to DNS server') === 0;
-            }));
-
-        $promise->then($this->expectCallableNever(), $mock);
-    }
-
-    /** @test */
-    public function resolveShouldFailIfResponseIsTruncatedAfterTcpRequest()
-    {
-        $timer = $this->getMockBuilder('React\EventLoop\Timer\TimerInterface')->getMock();
-
-        $this->loop
-            ->expects($this->any())
-            ->method('addTimer')
-            ->will($this->returnValue($timer));
-
-        $this->parser
-            ->expects($this->once())
-            ->method('parseMessage')
-            ->will($this->returnTruncatedResponse());
-
-        $this->executor = $this->createExecutorMock();
-        $this->executor
-            ->expects($this->once())
-            ->method('createConnection')
-            ->with('8.8.8.8:53', 'tcp')
-            ->will($this->returnNewConnectionMock());
-
-        $mock = $this->createCallableMock();
-        $mock
-            ->expects($this->once())
-            ->method('__invoke')
-            ->with($this->callback(function($e) {
-                return $e instanceof \React\Dns\BadServerException &&
-                       'The server set the truncated bit although we issued a TCP request' === $e->getMessage();
-            }));
-
-        $query = new Query(str_repeat('a', 512).'.igor.io', Message::TYPE_A, Message::CLASS_IN, 1345656451);
-        $this->executor->query('8.8.8.8:53', $query)
-            ->then($this->expectCallableNever(), $mock);
+        $this->setExpectedException('RuntimeException', 'DNS query for igor.io failed: Nope');
+        Block\await($promise, $this->loop);
     }
 
     /** @test */
@@ -289,10 +171,7 @@ class ExecutorTest extends TestCase
             ->will($this->returnNewConnectionMock());
 
 
-        $timer = $this->getMockBuilder('React\EventLoop\Timer\TimerInterface')->getMock();
-        $timer
-            ->expects($this->once())
-            ->method('cancel');
+        $timer = $this->createTimerMock();
 
         $this->loop
             ->expects($this->once())
@@ -300,8 +179,13 @@ class ExecutorTest extends TestCase
             ->with(5, $this->isInstanceOf('Closure'))
             ->will($this->returnValue($timer));
 
+        $this->loop
+            ->expects($this->once())
+            ->method('cancelTimer')
+            ->with($timer);
+
         $query = new Query('igor.io', Message::TYPE_A, Message::CLASS_IN, 1345656451);
-        $this->executor->query('8.8.8.8:53', $query, function () {}, function () {});
+        $this->executor->query('8.8.8.8:53', $query);
     }
 
     /** @test */
@@ -314,10 +198,11 @@ class ExecutorTest extends TestCase
             ->with('8.8.8.8:53', 'udp')
             ->will($this->returnNewConnectionMock(false));
 
-        $timer = $this->getMockBuilder('React\EventLoop\Timer\TimerInterface')->getMock();
-        $timer
+        $timer = $this->createTimerMock();
+
+        $this->loop
             ->expects($this->never())
-            ->method('cancel');
+            ->method('cancelTimer');
 
         $this->loop
             ->expects($this->once())
@@ -328,28 +213,21 @@ class ExecutorTest extends TestCase
                 return $timer;
             }));
 
-        $callback = $this->expectCallableNever();
-
-        $errorback = $this->createCallableMock();
-        $errorback
-            ->expects($this->once())
-            ->method('__invoke')
-            ->with($this->logicalAnd(
-                $this->isInstanceOf('React\Dns\Query\TimeoutException'),
-                $this->attribute($this->equalTo('DNS query for igor.io timed out'), 'message')
-            ));
-
         $query = new Query('igor.io', Message::TYPE_A, Message::CLASS_IN, 1345656451);
-        $this->executor->query('8.8.8.8:53', $query)->then($callback, $errorback);
+        $promise = $this->executor->query('8.8.8.8:53', $query);
 
         $this->assertNotNull($timerCallback);
         $timerCallback();
+
+        $this->setExpectedException('React\Dns\Query\TimeoutException', 'DNS query for igor.io timed out');
+        Block\await($promise, $this->loop);
     }
 
     private function returnStandardResponse()
     {
         $that = $this;
-        $callback = function ($data, $response) use ($that) {
+        $callback = function ($data) use ($that) {
+            $response = new Message();
             $that->convertMessageToStandardResponse($response);
             return $response;
         };
@@ -401,7 +279,7 @@ class ExecutorTest extends TestCase
 
     private function createConnectionMock($emitData = true)
     {
-        $conn = $this->getMockBuilder('React\Socket\ConnectionInterface')->getMock();
+        $conn = $this->getMockBuilder('React\Stream\DuplexStreamInterface')->getMock();
         $conn
             ->expects($this->any())
             ->method('on')
@@ -411,6 +289,13 @@ class ExecutorTest extends TestCase
             }));
 
         return $conn;
+    }
+
+    private function createTimerMock()
+    {
+        return $this->getMockBuilder(
+            interface_exists('React\EventLoop\TimerInterface') ? 'React\EventLoop\TimerInterface' : 'React\EventLoop\Timer\TimerInterface'
+        )->getMock();
     }
 
     private function createExecutorMock()

@@ -19,18 +19,19 @@ final class WritableResourceStream extends EventEmitter implements WritableStrea
 
     public function __construct($stream, LoopInterface $loop, $writeBufferSoftLimit = null, $writeChunkSize = null)
     {
-        if (!is_resource($stream) || get_resource_type($stream) !== "stream") {
+        if (!\is_resource($stream) || \get_resource_type($stream) !== "stream") {
             throw new \InvalidArgumentException('First parameter must be a valid stream resource');
         }
 
-        $meta = stream_get_meta_data($stream);
-        if (isset($meta['mode']) && str_replace(array('b', 't'), '', $meta['mode']) === 'r') {
+        // ensure resource is opened for writing (fopen mode must contain either of "waxc+")
+        $meta = \stream_get_meta_data($stream);
+        if (isset($meta['mode']) && $meta['mode'] !== '' && \strtr($meta['mode'], 'waxc+', '.....') === $meta['mode']) {
             throw new \InvalidArgumentException('Given stream resource is not opened in write mode');
         }
 
         // this class relies on non-blocking I/O in order to not interrupt the event loop
         // e.g. pipes on Windows do not support this: https://bugs.php.net/bug.php?id=47918
-        if (stream_set_blocking($stream, 0) !== true) {
+        if (\stream_set_blocking($stream, 0) !== true) {
             throw new \RuntimeException('Unable to set stream resource to non-blocking mode');
         }
 
@@ -92,15 +93,19 @@ final class WritableResourceStream extends EventEmitter implements WritableStrea
         $this->writable = false;
         $this->data = '';
 
-        $this->emit('close', array($this));
+        $this->emit('close');
         $this->removeAllListeners();
+
+        if (\is_resource($this->stream)) {
+            \fclose($this->stream);
+        }
     }
 
     /** @internal */
     public function handleWrite()
     {
         $error = null;
-        set_error_handler(function ($errno, $errstr, $errfile, $errline) use (&$error) {
+        \set_error_handler(function ($errno, $errstr, $errfile, $errline) use (&$error) {
             $error = array(
                 'message' => $errstr,
                 'number' => $errno,
@@ -110,12 +115,12 @@ final class WritableResourceStream extends EventEmitter implements WritableStrea
         });
 
         if ($this->writeChunkSize === -1) {
-            $sent = fwrite($this->stream, $this->data);
+            $sent = \fwrite($this->stream, $this->data);
         } else {
-            $sent = fwrite($this->stream, $this->data, $this->writeChunkSize);
+            $sent = \fwrite($this->stream, $this->data, $this->writeChunkSize);
         }
 
-        restore_error_handler();
+        \restore_error_handler();
 
         // Only report errors if *nothing* could be sent.
         // Any hard (permanent) error will fail to send any data at all.
@@ -142,7 +147,7 @@ final class WritableResourceStream extends EventEmitter implements WritableStrea
         }
 
         $exceeded = isset($this->data[$this->softLimit - 1]);
-        $this->data = (string) substr($this->data, $sent);
+        $this->data = (string) \substr($this->data, $sent);
 
         // buffer has been above limit and is now below limit
         if ($exceeded && !isset($this->data[$this->softLimit - 1])) {

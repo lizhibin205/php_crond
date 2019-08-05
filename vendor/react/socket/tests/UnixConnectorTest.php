@@ -2,9 +2,8 @@
 
 namespace React\Tests\Socket;
 
-use React\Socket\UnixConnector;
-use Clue\React\Block;
 use React\Socket\ConnectionInterface;
+use React\Socket\UnixConnector;
 
 class UnixConnectorTest extends TestCase
 {
@@ -13,7 +12,7 @@ class UnixConnectorTest extends TestCase
 
     public function setUp()
     {
-        $this->loop = $this->getMock('React\EventLoop\LoopInterface');
+        $this->loop = $this->getMockBuilder('React\EventLoop\LoopInterface')->getMock();
         $this->connector = new UnixConnector($this->loop);
     }
 

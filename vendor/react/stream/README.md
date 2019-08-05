@@ -1,15 +1,16 @@
-# Stream Component
+# Stream
 
 [![Build Status](https://travis-ci.org/reactphp/stream.svg?branch=master)](https://travis-ci.org/reactphp/stream)
 
 Event-driven readable and writable streams for non-blocking I/O in [ReactPHP](https://reactphp.org/).
 
 In order to make the [EventLoop](https://github.com/reactphp/event-loop)
-easier to use, this component introduces the concept of "streams".
+easier to use, this component introduces the powerful concept of "streams".
+Streams allow you to efficiently process huge amounts of data (such as a multi
+Gigabyte file download) in small chunks without having to store everything in
+memory at once.
 They are very similar to the streams found in PHP itself,
 but have an interface more suited for async, non-blocking I/O.
-Mainly it provides interfaces for readable and writable streams, plus a file
-descriptor based implementation with an in-memory write buffer.
 
 **Table of contents**
 
@@ -925,8 +926,8 @@ take care of the underlying stream resource.
 You SHOULD only use its public API and SHOULD NOT interfere with the underlying
 stream resource manually.
 
-Any `write()` calls to this class will not be performaned instantly, but will
-be performaned asynchronously, once the EventLoop reports the stream resource is
+Any `write()` calls to this class will not be performed instantly, but will
+be performed asynchronously, once the EventLoop reports the stream resource is
 ready to accept data.
 For this, it uses an in-memory buffer string to collect all outstanding writes.
 This buffer has a soft-limit applied which defines how much data it is willing
@@ -1022,8 +1023,8 @@ $conn = stream_socket_client('tcp://google.com:80');
 $stream = new DuplexResourceStream($conn, $loop, 8192);
 ```
 
-Any `write()` calls to this class will not be performaned instantly, but will
-be performaned asynchronously, once the EventLoop reports the stream resource is
+Any `write()` calls to this class will not be performed instantly, but will
+be performed asynchronously, once the EventLoop reports the stream resource is
 ready to accept data.
 For this, it uses an in-memory buffer string to collect all outstanding writes.
 This buffer has a soft-limit applied which defines how much data it is willing
@@ -1122,8 +1123,8 @@ This is useful for some APIs which may require a single
 more convenient to work with a single stream instance like this:
 
 ```php
-$stdin = new ReadableStreamResource(STDIN, $loop);
-$stdout = new WritableStreamResource(STDOUT, $loop);
+$stdin = new ReadableResourceStream(STDIN, $loop);
+$stdout = new WritableResourceStream(STDOUT, $loop);
 
 $stdio = new CompositeStream($stdin, $stdout);
 
@@ -1153,7 +1154,7 @@ The following example can be used to pipe the contents of a source file into
 a destination file without having to ever read the whole file into memory:
 
 ```php
-$loop = new React\EventLoop\StreamSelectLoop::create();
+$loop = new React\EventLoop\StreamSelectLoop;
 
 $source = new React\Stream\ReadableResourceStream(fopen('source.txt', 'r'), $loop);
 $dest = new React\Stream\WritableResourceStream(fopen('destination.txt', 'w'), $loop);
@@ -1171,16 +1172,17 @@ $loop->run();
 
 ## Install
 
-The recommended way to install this library is [through Composer](http://getcomposer.org).
-[New to Composer?](http://getcomposer.org/doc/00-intro.md)
+The recommended way to install this library is [through Composer](https://getcomposer.org).
+[New to Composer?](https://getcomposer.org/doc/00-intro.md)
 
+This project follows [SemVer](https://semver.org/).
 This will install the latest supported version:
 
 ```bash
-$ composer require react/stream:^0.7.1
+$ composer require react/stream:^1.0
 ```
 
-More details about version upgrades can be found in the [CHANGELOG](CHANGELOG.md).
+See also the [CHANGELOG](CHANGELOG.md) for details about version upgrades.
 
 This project aims to run on any platform and thus does not require any PHP
 extensions and supports running on legacy PHP 5.3 through current PHP 7+ and HHVM.
@@ -1190,7 +1192,7 @@ performance improvements.
 ## Tests
 
 To run the test suite, you first need to clone this repo and then install all
-dependencies [through Composer](http://getcomposer.org):
+dependencies [through Composer](https://getcomposer.org):
 
 ```bash
 $ composer install
@@ -1200,6 +1202,14 @@ To run the test suite, go to the project root and run:
 
 ```bash
 $ php vendor/bin/phpunit
+```
+
+The test suite also contains a number of functional integration tests that rely
+on a stable internet connection.
+If you do not want to run these, they can simply be skipped like this:
+
+```bash
+$ php vendor/bin/phpunit --exclude-group internet
 ```
 
 ## License

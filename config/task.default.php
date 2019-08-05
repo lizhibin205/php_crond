@@ -2,7 +2,7 @@
 /**
  * task配置文件
  * 例子：
- * 'process_a' => [
+ * 'demo' => [
  *      'daemon' => '* * * * * *',//秒 分 时 日 月 周
  *      'filename' => '/usr/local/php/bin/php', //执行程序
  *      'params' => [],//执行程序参数
@@ -13,12 +13,12 @@
  */
 
 return [
-    'process_a' => [
+    'demo' => [
         'daemon' => '*/3 * * * * *',
-        'filename' => '/usr/local/php-5.6.30/bin/php',
-        'params' => ['/www/tests/pcntl/examples/a.php'],
+        'filename' => 'echo',
+        'params' => ['"hello world!"'],
         'single' => true,
-        'standard_ouput' => '/www/tests/pcntl/examples/a.log',
-        'error_output' => '/www/tests/pcntl/examples/a.log',
+        'standard_ouput' => '/dev/null',
+        'error_output' => '/dev/null',
     ]
 ];

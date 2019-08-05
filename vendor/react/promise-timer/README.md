@@ -1,6 +1,8 @@
-# react/promise-timer [![Build Status](https://travis-ci.org/reactphp/promise-timer.svg?branch=master)](https://travis-ci.org/reactphp/promise-timer)
+# PromiseTimer
 
-A trivial implementation of timeouts for `Promise`s, built on top of [React PHP](http://reactphp.org/).
+[![Build Status](https://travis-ci.org/reactphp/promise-timer.svg?branch=master)](https://travis-ci.org/reactphp/promise-timer)
+
+A trivial implementation of timeouts for `Promise`s, built on top of [ReactPHP](https://reactphp.org/).
 
 **Table of contents**
 
@@ -17,6 +19,7 @@ A trivial implementation of timeouts for `Promise`s, built on top of [React PHP]
     * [Reject cancellation](#reject-cancellation)
   * [TimeoutException](#timeoutexception)
 * [Install](#install)
+* [Tests](#tests)
 * [License](#license)
 
 ## Usage
@@ -36,7 +39,7 @@ Alternatively, you can also refer to them with their fully-qualified name:
 
 ```php
 \React\Promise\Timer\timeout(…);
-``` 
+```
 
 ### timeout()
 
@@ -48,6 +51,14 @@ It returns a new `Promise` with the following resolution behavior:
 * If the input `$promise` resolves before `$time` seconds, resolve the resulting promise with its fulfillment value.
 * If the input `$promise` rejects before `$time` seconds, reject the resulting promise with its rejection value.
 * If the input `$promise` does not settle before `$time` seconds, *cancel* the operation and reject the resulting promise with a [`TimeoutException`](#timeoutexception).
+
+Internally, the given `$time` value will be used to start a timer that will
+*cancel* the pending operation once it triggers.
+This implies that if you pass a really small (or negative) value, it will still
+start a timer and will thus trigger at the earliest possible time in the future.
+
+If the input `$promise` is already settled, then the resulting promise will
+resolve or reject immediately without starting a timer at all.
 
 A common use case for handling only resolved values looks like this:
 
@@ -154,7 +165,7 @@ For more details on the promise cancellation, please refer to the
 
 #### Input cancellation
 
-Irrespective of the timout handling, you can also explicitly `cancel()` the
+Irrespective of the timeout handling, you can also explicitly `cancel()` the
 input `$promise` at any time.
 This means that the `timeout()` handling does not affect cancellation of the
 input `$promise`, as demonstrated in the following example:
@@ -268,6 +279,11 @@ Timer\resolve(1.5, $loop)->then(function ($time) {
 });
 ```
 
+Internally, the given `$time` value will be used to start a timer that will
+resolve the promise once it triggers.
+This implies that if you pass a really small (or negative) value, it will still
+start a timer and will thus trigger at the earliest possible time in the future.
+
 #### Resolve cancellation
 
 You can explicitly `cancel()` the resulting timer promise at any time:
@@ -290,6 +306,11 @@ Timer\reject(2.0, $loop)->then(null, function (TimeoutException $e) {
     echo 'Rejected after ' . $e->getTimeout() . ' seconds ' . PHP_EOL;
 });
 ```
+
+Internally, the given `$time` value will be used to start a timer that will
+reject the promise once it triggers.
+This implies that if you pass a really small (or negative) value, it will still
+start a timer and will thus trigger at the earliest possible time in the future.
 
 This function complements the [`resolve()`](#resolve) function
 and can be used as a basic building block for higher-level promise consumers.
@@ -314,17 +335,38 @@ The `getTimeout()` method can be used to get the timeout value in seconds.
 
 ## Install
 
-The recommended way to install this library is [through Composer](http://getcomposer.org).
-[New to Composer?](http://getcomposer.org/doc/00-intro.md)
+The recommended way to install this library is [through Composer](https://getcomposer.org).
+[New to Composer?](https://getcomposer.org/doc/00-intro.md)
 
+This project follows [SemVer](https://semver.org/).
 This will install the latest supported version:
 
 ```bash
-$ composer require react/promise-timer:^1.1.1
+$ composer require react/promise-timer:^1.5
 ```
 
-More details and upgrade guides can be found in the [CHANGELOG](CHANGELOG.md).
+See also the [CHANGELOG](CHANGELOG.md) for details about version upgrades.
+
+This project aims to run on any platform and thus does not require any PHP
+extensions and supports running on legacy PHP 5.3 through current PHP 7+ and
+HHVM.
+It's *highly recommended to use PHP 7+* for this project.
+
+## Tests
+
+To run the test suite, you first need to clone this repo and then install all
+dependencies [through Composer](https://getcomposer.org):
+
+```bash
+$ composer install
+```
+
+To run the test suite, go to the project root and run:
+
+```bash
+$ php vendor/bin/phpunit
+```
 
 ## License
 
-MIT
+MIT, see [LICENSE file](LICENSE).

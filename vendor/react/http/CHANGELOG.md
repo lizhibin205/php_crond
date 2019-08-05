@@ -1,5 +1,200 @@
 # Changelog
 
+## 0.8.4 (2019-01-16)
+
+*   Improvement: Internal refactoring to simplify response header logic.
+    (#321 by @clue)
+
+*   Improvement: Assign Content-Length response header automatically only when size is known.
+    (#329 by @clue)
+
+*   Improvement: Import global functions for better performance.
+    (#330 by @WyriHaximus)
+
+## 0.8.3 (2018-04-11)
+
+*   Feature: Do not pause connection stream to detect closed connections immediately.
+    (#315 by @clue)
+
+*   Feature: Keep incoming `Transfer-Encoding: chunked` request header.
+    (#316 by @clue)
+
+*   Feature: Reject invalid requests that contain both `Content-Length` and `Transfer-Encoding` request headers.
+    (#318 by @clue)
+
+*   Minor internal refactoring to simplify connection close logic after sending response.
+    (#317 by @clue)
+
+## 0.8.2 (2018-04-06)
+
+*   Fix: Do not pass `$next` handler to final request handler.
+    (#308 by @clue)
+
+*   Fix: Fix awaiting queued handlers when cancelling a queued handler.
+    (#313 by @clue)
+
+*   Fix: Fix Server to skip `SERVER_ADDR` params for Unix domain sockets (UDS).
+    (#307 by @clue)
+
+*   Documentation for PSR-15 middleware and minor documentation improvements.
+    (#314 by @clue and #297, #298 and #310 by @seregazhuk)
+
+*   Minor code improvements and micro optimizations.
+    (#301 by @seregazhuk and #305 by @kalessil)
+
+## 0.8.1 (2018-01-05)
+
+*   Major request handler performance improvement. Benchmarks suggest number of
+    requests/s improved by more than 50% for common `GET` requests!
+    We now avoid queuing, buffering and wrapping incoming requests in promises
+    when we're below limits and instead can directly process common requests.
+    (#291, #292, #293, #294 and #296 by @clue)
+
+*   Fix: Fix concurrent invoking next middleware request handlers
+    (#293 by @clue)
+
+*   Small code improvements
+    (#286 by @seregazhuk)
+
+*   Improve test suite to be less fragile when using `ext-event` and
+    fix test suite forward compatibility with upcoming EventLoop releases
+    (#288 and #290 by @clue)
+
+## 0.8.0 (2017-12-12)
+
+*   Feature / BC break: Add new `Server` facade that buffers and parses incoming
+    HTTP requests. This provides full PSR-7 compatibility, including support for
+    form submissions with POST fields and file uploads.
+    The old `Server` has been renamed to `StreamingServer` for advanced usage
+    and is used internally.
+    (#266, #271, #281, #282, #283 and #284 by @WyriHaximus and @clue)
+
+    ```php
+    // old: handle incomplete/streaming requests
+    $server = new Server($handler);
+
+    // new: handle complete, buffered and parsed requests
+    // new: full PSR-7 support, including POST fields and file uploads
+    $server = new Server($handler);
+
+    // new: handle incomplete/streaming requests
+    $server = new StreamingServer($handler);
+    ```
+
+    > While this is technically a small BC break, this should in fact not break
+      most consuming code. If you rely on the old request streaming, you can
+      explicitly use the advanced `StreamingServer` to restore old behavior.
+
+*   Feature: Add support for middleware request handler arrays
+    (#215, #228, #229, #236, #237, #238, #246, #247, #277, #279 and #285 by @WyriHaximus, @clue and @jsor)
+
+    ```php
+    // new: middleware request handler arrays
+    $server = new Server(array(
+        function (ServerRequestInterface $request, callable $next) {
+            $request = $request->withHeader('Processed', time());
+            return $next($request);
+        },
+        function (ServerRequestInterface $request) {
+            return new Response();
+        }
+    ));
+    ```
+
+*   Feature: Add support for limiting how many next request handlers can be
+    executed concurrently (`LimitConcurrentRequestsMiddleware`)
+    (#272 by @clue and @WyriHaximus)
+
+    ```php
+    // new: explicitly limit concurrency
+    $server = new Server(array(
+        new LimitConcurrentRequestsMiddleware(10),
+        $handler
+    ));
+    ```
+
+*   Feature: Add support for buffering the incoming request body
+    (`RequestBodyBufferMiddleware`).
+    This feature mimics PHP's default behavior and respects its `post_max_size`
+    ini setting by default and allows explicit configuration.
+    (#216, #224, #263, #276 and #278 by @WyriHaximus and #235 by @andig)
+
+    ```php
+    // new: buffer up to 10 requests with 8 MiB each
+    $server = new StreamingServer(array(
+        new LimitConcurrentRequestsMiddleware(10),
+        new RequestBodyBufferMiddleware('8M'),
+        $handler
+    ));
+    ```
+
+*   Feature: Add support for parsing form submissions with POST fields and file
+    uploads (`RequestBodyParserMiddleware`).
+    This feature mimics PHP's default behavior and respects its ini settings and
+    `MAX_FILE_SIZE` POST fields by default and allows explicit configuration.
+    (#220, #226, #252, #261, #264, #265, #267, #268, #274 by @WyriHaximus and @clue)
+
+    ```php
+    // new: buffer up to 10 requests with 8 MiB each
+    // and limit to 4 uploads with 2 MiB each
+    $server = new StreamingServer(array(
+        new LimitConcurrentRequestsMiddleware(10),
+        new RequestBodyBufferMiddleware('8M'),
+        new RequestBodyParserMiddleware('2M', 4)
+        $handler
+    ));
+    ```
+
+*   Feature: Update Socket to work around sending secure HTTPS responses with PHP < 7.1.4
+    (#244 by @clue)
+
+*   Feature: Support sending same response header multiple times (e.g. `Set-Cookie`)
+    (#248 by @clue)
+
+*   Feature: Raise maximum request header size to 8k to match common implementations
+    (#253 by @clue)
+
+*   Improve test suite by adding forward compatibility with PHPUnit 6, test
+    against PHP 7.1 and PHP 7.2 and refactor and remove risky and duplicate tests.
+    (#243, #269 and #270 by @carusogabriel and #249 by @clue)
+
+*   Minor code refactoring to move internal classes to `React\Http\Io` namespace
+    and clean up minor code and documentation issues
+    (#251 by @clue, #227 by @kalessil, #240 by @christoph-kluge, #230 by @jsor and #280 by @andig)
+
+## 0.7.4 (2017-08-16)
+
+*   Improvement: Target evenement 3.0 a long side 2.0 and 1.0
+    (#212 by @WyriHaximus)
+
+## 0.7.3 (2017-08-14)
+
+*   Feature: Support `Throwable` when setting previous exception from server callback
+    (#155 by @jsor)
+
+*   Fix: Fixed URI parsing for origin-form requests that contain scheme separator
+    such as `/path?param=http://example.com`.
+    (#209 by @aaronbonneau)
+
+*   Improve test suite by locking Travis distro so new defaults will not break the build
+    (#211 by @clue)
+
+## 0.7.2 (2017-07-04)
+
+*   Fix: Stricter check for invalid request-line in HTTP requests
+    (#206 by @clue)
+
+*   Refactor to use HTTP response reason phrases from response object
+    (#205 by @clue)
+
+## 0.7.1 (2017-06-17)
+
+*   Fix: Fix parsing CONNECT request without `Host` header
+    (#201 by @clue)
+
+*   Internal preparation for future PSR-7 `UploadedFileInterface`
+    (#199 by @WyriHaximus)
+
 ## 0.7.0 (2017-05-29)
 
 *   Feature / BC break: Use PSR-7 (http-message) standard and

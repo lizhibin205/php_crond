@@ -2,15 +2,17 @@
 
 namespace React\Tests\Dns\Resolver;
 
+use PHPUnit\Framework\TestCase;
 use React\Dns\Resolver\Resolver;
 use React\Dns\Query\Query;
 use React\Dns\Model\Message;
 use React\Dns\Model\Record;
 
-class ResolveAliasesTest extends \PHPUnit_Framework_TestCase
+class ResolveAliasesTest extends TestCase
 {
     /**
      * @covers React\Dns\Resolver\Resolver::resolveAliases
+     * @covers React\Dns\Resolver\Resolver::valuesByNameAndType
      * @dataProvider provideAliasedAnswers
      */
     public function testResolveAliases(array $expectedAnswers, array $answers, $name)
