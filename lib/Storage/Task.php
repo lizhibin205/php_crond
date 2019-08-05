@@ -1,25 +1,40 @@
 <?php
 namespace Storage;
 
-use Stroage\Exception\TaskException;
+use Storage\Exception\TaskException;
 
 class Task
 {
+    /**
+     * 任务名称
+     * @var string
+     */
+    private $name;
+
+    /**
+     * 任务数据
+     * @var array
+     */
     private $data;
 
-    public function __construct($data)
+    public function __construct($name, $data)
     {
+        $this->name = $name;
         $this->data = $data;
     }
 
     /**
      * 创建一个Task对象
      * @param array $data
-     * @throws \Stroage\Exception\TaskException
+     * @throws TaskException
      * @return Task
      */
-    public static function create(array $task)
+    public static function create($name, array $task)
     {
+        if (!is_string($name) || empty($name)) {
+            throw new TaskException("Task name must be string and can not be empty.");
+        }
+
         //必须参数
         foreach (['daemon', 'filename', 'params', 'single', 'standard_ouput', 'error_output'] as $field) {
             if (!isset($task[$field])) {
@@ -42,7 +57,7 @@ class Task
             throw new TaskException("task.single must be boolean.");
         }
 
-        return new Task($task);
+        return new Task($name, $task);
     }
 
     /**
@@ -51,11 +66,11 @@ class Task
      */
     public function __get($attr)
     {
-        $data = $this->data;
-        if (!isset($data[$attr])) {
-            throw new TaskException("task.{$attr} not exists.");
+        $dataAttr = $this->data;
+        if (!isset($dataAttr[$attr])) {
+            throw new TaskException("task[{$attr}] not exists.");
         }
-        return $data[$attr];
+        return $dataAttr[$attr];
     }
 
     /**
@@ -100,5 +115,58 @@ class Task
             }
         }
         return true;
+    }
+
+    /**
+     * 判断任务是否单例
+     */
+    public function isSingle()
+    {
+        return $this->single;
+    }
+
+    /**
+     * 获取任务名称
+     * @return string
+     */
+    public function getTaskName()
+    {
+        return $this->name;
+    }
+
+    /**
+     * 获取唯一的任务名称
+     * @return string
+     */
+    public function getUniqTaskName()
+    {
+        return $this->single ? $this->name : $this->name . time();
+    }
+
+    /**
+     * 获取执行命令
+     * @return string
+     */
+    public function getExecution()
+    {
+        return "{$this->filename} " . implode(" ", $this->params);
+    }
+
+    /**
+     * 获取标准输出
+     * @return string
+     */
+    public function getStandardOuput()
+    {
+        return $this->standard_ouput;
+    }
+
+    /**
+     * 获取错误输出
+     * @return string
+     */
+    public function getErrorOutput()
+    {
+        return $this->error_ouput;
     }
 }

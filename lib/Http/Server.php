@@ -1,6 +1,7 @@
 <?php
 namespace Http;
 
+use Crond\Crond;
 use Psr\Http\Message\ServerRequestInterface;
 
 class Server
@@ -8,9 +9,9 @@ class Server
     /**
      * 创建一个HttpServer
      */
-    public static function createHttpServer()
+    public static function createHttpServer(Crond $crond)
     {
-        $httpServer = new \React\Http\Server(function (ServerRequestInterface $request) {
+        $httpServer = new \React\Http\Server(function (ServerRequestInterface $request) use ($crond) {
             $getParams = $request->getQueryParams();
             $controller = ucfirst(isset($getParams['c']) ? $getParams['c'] : 'Page');
             $action = isset($getParams['a']) ? $getParams['a'] : 'index';
