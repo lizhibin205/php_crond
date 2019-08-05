@@ -62,32 +62,22 @@ return [
 /**
  * task配置文件
  * 例子：
- * 'process_a' => [
- *      'daemon' => '* * * * * *',//秒 分 时 日 月 周
- *      'filename' => '/usr/local/php/bin/php', //执行程序
- *      'params' => [],//执行程序参数
- *      'single' => true,//如果进程在运行，则不执行，只保持一个进程
- *      'standard_ouput' => '', //标准输出
- *      'error_output' => '', // 错误输出
- *  ]
  */
+return ['demo' => [
+  'daemon' => '* * * * * *',//秒 分 时 日 月 周
+  'filename' => 'sleep', //执行程序
+  'params' => ['5'],//执行程序参数
+  'single' => true,//如果进程在运行，则不执行，只保持一个进程
+  'standard_ouput' => '/dev/null', //标准输出
+  'error_output' => '/dev/null', // 错误输出
+]];
 
-return [
-    'process_a' => [
-        'daemon' => '*/3 * * * * *',
-        'filename' => '/usr/local/php-5.6.30/bin/php',
-        'params' => ['/www/tests/pcntl/examples/a.php'],
-        'single' => true,
-        'standard_ouput' => '/www/tests/pcntl/examples/a.log',
-        'error_output' => '/www/tests/pcntl/examples/a.log',
-    ]
-];
 ```
 
-如果你需要配置非常多的任务，可以使用Crond\Task\Directory::registerTaskDirectory，该方法会遍历注册目录下的所有.php文件，并返回其中的任务列表
+如果你需要配置非常多的任务，可以使用Storage\Reader::registerTaskDirectory，该方法会遍历注册目录下的所有.php文件，并返回其中的任务列表
 
 ```php
-return Crond\Task\Directory::registerTaskDirectory(__DIR__ . "/tasks");
+return \Storage\Reader::registerTaskDirectory(__DIR__ . "/tasks");
 ```
 
 允许配置外部接口，用于返回任务列表。参数url=接口地址，serverId=作为服务标识
@@ -95,14 +85,14 @@ return Crond\Task\Directory::registerTaskDirectory(__DIR__ . "/tasks");
 PS：你可能需要额外搭建后台用于任务管理
 
 ```php
-return \Crond\Task\Remote::registerTask($url, $serverId);
+return \Storage\Reader::registerTaskRemote($url, $serverId);
 ```
 
 接口返回例子
 
 ```javascript
 {
-    "process_a": {
+    "demo": {
         "daemon": "0 * * * * *",
         "filename": "echo",
         "params": ["hello world!"],
