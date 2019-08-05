@@ -19,6 +19,7 @@ class Server
             if (class_exists($className) && method_exists($className, $action)) {
                 try {
                     $controllerClass = new $className($request);
+                    $controllerClass->setCrond($crond);
                     return $controllerClass->$action();
                 } catch (\Exception $ex) {
                     return Render::html(500, [], $ex->getMessage());

@@ -17,7 +17,7 @@ class Task
      */
     private $data;
 
-    public function __construct($name, $data)
+    public function __construct($name, array $data)
     {
         $this->name = $name;
         $this->data = $data;
@@ -85,27 +85,31 @@ class Task
      */
     public function match($execSecond, $execMintue, $execHour, $execDay, $execMonth, $execWeek)
     {
-        $timeArr = ['execSecond', 'execMintue', 'execHour', 'execDay', 'execMonth', 'execWeek'];
-        foreach ($timeArr as $time) {
-            $nowTime = intval($$time);
-            $configTime = $this->$time;
+        list($taskSecond, $taskMintue, $taskHour, $taskDay, $taskMonth, $taskWeek) = explode(' ', $this->daemon);
+        $taskArr = [$taskSecond, $taskMintue, $taskHour, $taskDay, $taskMonth, $taskWeek];
+        $execArr = [$execSecond, $execMintue, $execHour, $execDay, $execMonth, $execWeek];
+
+        //从秒开始进行匹配
+        foreach ($execArr as $key => $execTime) {
+            $taskTime = $taskArr[$key];
+
             //任务设置为*，通过
-            if ($configTime === '*') {
+            if ($taskTime === '*') {
                 continue;
             }
-            $configTimeList = explode(',', $configTime);
+
+            //如果有多个条件，使用英文逗号分隔
             $configTimeMatch = false;
-            foreach ($configTimeList as $configTimePart) {
-                //任务设置为*/n
+            $taskTimeList = explode(',', $taskTime);
+            foreach ($taskTimeList as $taskTimePart) {
                 $matches = null;
-                if (\preg_match("/^\*\/(\d+)$/", $configTimePart, $matches) === 1) {
-                    if ($nowTime % $matches[1] === 0) {
-                        $configTimeMatch = true;
-                        break;
-                    }
+                if (\preg_match("/^\*\/(\d+)$/", $taskTimePart, $matches) === 1 && $execTime % $matches[1] === 0) {
+                    //任务设置为*/n
+                    $configTimeMatch = true;
+                    break;
                 }
-                //任务设置为数字
-                if (intval($configTimePart) === $nowTime) {
+                if (\preg_match("/^[0-9]+$/", $taskTimePart, $matches) === 1 && $matches[0] == $execTime) {
+                    //任务设置为数字
                     $configTimeMatch = true;
                     break;
                 }

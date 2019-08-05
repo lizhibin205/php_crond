@@ -159,9 +159,9 @@ class Crond
                 sleep(1);
             }
         } catch (\Exception $ex) {
-            $this->logger->error($ex->getMessage());
+            $this->logger->error($ex->getMessage(), $ex->getTrace());
         } catch (\Throwable $ex) {
-            $this->logger->error($ex->getMessage());
+            $this->logger->error($ex->getMessage(), $ex->getTrace());
         } finally {
             $this->logger->info('php_crond end');
         }

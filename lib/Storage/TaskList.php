@@ -12,13 +12,13 @@ class TaskList
      */
     public function loadTasks()
     {
-        $filename = PROJECT_ROOT . "/config/base.php";
+        $filename = PROJECT_ROOT . "/config/task.php";
         if (!is_file($filename)) {
             throw new CrondRuntimeException("Counld not load task config file.");
         }
-        $taskArrList = include PROJECT_ROOT . "/config/base.php";
-        foreach ($taskArrList as $taskArr) {
-            $this->addTask(Task::create($taskArr));
+        $taskArrList = include PROJECT_ROOT . "/config/task.php";
+        foreach ($taskArrList as $taskName => $taskArr) {
+            $this->addTask(Task::create($taskName, $taskArr));
         }
     }
 
@@ -32,7 +32,7 @@ class TaskList
     }
 
     /**
-     * 
+     * 添加任务
      * @param Task $task
      */
     public function addTask(Task $task)
