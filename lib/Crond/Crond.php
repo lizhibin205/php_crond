@@ -172,6 +172,7 @@ class Crond
      */
     public function shutdown()
     {
+        $this->logger->info('php_crond shuwdown has been called.');
         $this->running = false;
     }
 
@@ -180,6 +181,7 @@ class Crond
      */
     public function reloadTask()
     {
+        $this->logger->info('php_crond reloadTask has been called.');
         $this->taskList->reloadTasks();
     }
 
@@ -231,10 +233,13 @@ class Crond
     {
         $tasks = [];
         foreach ($this->processList as $process) {
-            $tasks[] = [
-                'pid' => $process->getPid(),
-                'command' => $process->getCommandLine(),
-            ];
+            $pid = $process->getPid();
+            if ($pid > 0) {
+                $tasks[] = [
+                    'pid' => $pid,
+                    'command' => $process->getCommandLine(),
+                ];
+            }
         }
         return $tasks;
     }
