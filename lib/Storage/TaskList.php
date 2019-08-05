@@ -42,17 +42,26 @@ class TaskList
 
     /**
      * 查找符合条件的任务
-     * @return array
+     * @return Task
      */
     public function findTask($execSecond, $execMintue, $execHour, $execDay, $execMonth, $execWeek)
     {
-        $matchTaskList = [];
         foreach ($this->list as $task) {
             if ($task->match($execSecond, $execMintue, $execHour, $execDay, $execMonth, $execWeek)) {
-                $matchTaskList[] = $task;
+                yield $task;
             }
         }
-        return $matchTaskList;
+    }
+
+    /**
+     * 遍历任务列表中的任务
+     * @return Task
+     */
+    public function fetchTask()
+    {
+        foreach ($this->list as $task) {
+            yield $task;
+        }
     }
 }
 
