@@ -20,7 +20,7 @@ class Config
         if (is_file($filename)) {
             $this->configData = include $filename;
         } else {
-            throw new \RuntimeException("php_crond base config file not exists!");
+            throw new CrondRuntimeException("php_crond base config file not exists!");
         }
     }
 
@@ -34,7 +34,7 @@ class Config
         if (isset($configData[$name])) {
             return $configData[$name];
         } else {
-            throw new \RuntimeException("php_crond base config[{$name}] not exists!");
+            throw new CrondRuntimeException("php_crond base config[{$name}] not exists!");
         }
     }
 }

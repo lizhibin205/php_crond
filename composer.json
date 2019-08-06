@@ -1,25 +1,23 @@
 {
-	"name" : "lizhibin/php-crond",
-	"description" : "php-crond",
-	"authors" : [{
-			"name" : "lizhibin"
-		}
-	],
-	"require" : {
-		"php" : ">=5.5.9",
-		"monolog/monolog" : "1.22.1",
-		"symfony/process" : "3.3.2",
-		"react/event-loop" : "1.1.*",
-		"react/http" : "0.8.*",
-		"guzzlehttp/guzzle" : "6.3.3"
-	},
-	"autoload" : {
-		"psr-0" : {
-			"Http\\" : "lib/",
-			"Crond\\" : "lib/",
-			
-			"Storage\\" : "lib/"
-		}
-	},
-	"minimum-stability" : "RC"
+    "name": "lizhibin/php-crond",
+    "description": "php-crond",
+    "authors": [{
+        "name": "lizhibin"
+    }],
+    "require": {
+        "php": ">=5.6.0",
+        "monolog/monolog": "1.24.*",
+        "symfony/process": "3.4.*",
+        "react/event-loop": "1.1.*",
+        "react/http": "0.8.*",
+        "guzzlehttp/guzzle": "6.3.3"
+    },
+    "autoload": {
+        "psr-0": {
+            "Http\\": "lib/",
+            "Crond\\": "lib/",
+            "Storage\\": "lib/"
+        }
+    },
+    "minimum-stability": "RC"
 }
