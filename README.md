@@ -1,5 +1,10 @@
 php_crond 
 =============
+[![Latest Stable Version](https://poser.pugx.org/lizhibin/php-crond/version)](https://packagist.org/packages/lizhibin/php-crond)
+[![Total Downloads](https://poser.pugx.org/lizhibin/php-crond/downloads)](https://packagist.org/packages/lizhibin/php-crond)
+[![Latest Unstable Version](https://poser.pugx.org/lizhibin/php-crond/v/unstable)](//packagist.org/packages/lizhibin/php-crond)
+[![License](https://poser.pugx.org/lizhibin/php-crond/license)](https://packagist.org/packages/lizhibin/php-crond)
+
 基于多进程的定时任务管理器，支持秒级别的定时任务
 
 特性
