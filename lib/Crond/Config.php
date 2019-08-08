@@ -30,9 +30,9 @@ class Config
      */
     public function attr($name)
     {
-        $configData = $this->configData;
-        if (isset($configData[$name])) {
-            return $configData[$name];
+        $config = $this->configData;
+        if (isset($config[$name])) {
+            return $config[$name];
         } else {
             throw new CrondRuntimeException("php_crond base config[{$name}] not exists!");
         }

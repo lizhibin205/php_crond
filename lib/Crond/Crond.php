@@ -100,6 +100,7 @@ class Crond
             $this->logger->info("php_crond start");
             //主进程循环执行任务
             $loop = Factory::create();
+            $this->logger->info("php_crond start LoopInterface with ". get_class($loop));
             //HTTP启动
             $httpConfig = $this->crondConfig->attr('http_server');
             if ($httpConfig['switch'] === true) {
