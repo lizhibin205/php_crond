@@ -129,8 +129,9 @@ class Crond
                     //执行任务
                     $processCommand = $task->getExecution();
                     $process = new Process($processCommand);
-                    $process->start(function ($type, $buffer) use($task) {
-                        $this->logger->info($task->getTaskName() . " finished.");
+                    $process->start(function ($type, $buffer) use($task, $process) {
+                        //这个回调可能会被多次调用
+                        //如果任务没有输出，则不会被触发
                         $outputFileName = $type === Process::ERR ? $task->getErrorOutput() : $task->getStandardOuput();
                         if (!empty($outputFileName) || is_writable($outputFileName)) {
                             file_put_contents($outputFileName, $buffer, FILE_APPEND);
@@ -298,8 +299,8 @@ class Crond
     private function waitProcess()
     {
         foreach ($this->processList as $taskUniqName => $process) {
-            $result = $process->isTerminated();
-            if ($result) {
+            if ($process->isTerminated()) {
+                $this->logger->info($taskUniqName . " is terminated.");
                 unset($this->processList[$taskUniqName]);
             }
         }
