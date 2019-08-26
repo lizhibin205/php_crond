@@ -100,6 +100,7 @@ class Crond
             $this->logger->info("php_crond start");
             //主进程循环执行任务
             $loop = Factory::create();
+            $this->logger->info("php_crond start LoopInterface with ". get_class($loop));
             //HTTP启动
             $httpConfig = $this->crondConfig->attr('http_server');
             if ($httpConfig['switch'] === true) {
@@ -128,7 +129,9 @@ class Crond
                     //执行任务
                     $processCommand = $task->getExecution();
                     $process = new Process($processCommand);
-                    $process->start(function ($type, $buffer) use($task) {
+                    $process->start(function ($type, $buffer) use($task, $process) {
+                        //这个回调可能会被多次调用
+                        //如果任务没有输出，则不会被触发
                         $outputFileName = $type === Process::ERR ? $task->getErrorOutput() : $task->getStandardOuput();
                         if (!empty($outputFileName) || is_writable($outputFileName)) {
                             file_put_contents($outputFileName, $buffer, FILE_APPEND);
@@ -296,8 +299,14 @@ class Crond
     private function waitProcess()
     {
         foreach ($this->processList as $taskUniqName => $process) {
-            $result = $process->isTerminated();
-            if ($result) {
+            if ($process->isTerminated()) {
+                $exitCode = $process->getExitCode();
+                $exitMessage = $process->getExitCodeText();
+                if ($process->isSuccessful()) {
+                    $this->logger->info($taskUniqName . " is terminated, with exit code {$exitCode}({$exitMessage}).");
+                } else {
+                    $this->logger->warn($taskUniqName . " is terminated, with exit code {$exitCode}({$exitMessage}).");
+                }
                 unset($this->processList[$taskUniqName]);
             }
         }
