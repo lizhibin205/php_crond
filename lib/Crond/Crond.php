@@ -130,6 +130,7 @@ class Crond
                     $processCommand = $task->getExecution();
                     $process = new Process($processCommand);
                     $process->start(function ($type, $buffer) use($task) {
+                        $this->logger->info($task->getTaskName() . " finished.");
                         $outputFileName = $type === Process::ERR ? $task->getErrorOutput() : $task->getStandardOuput();
                         if (!empty($outputFileName) || is_writable($outputFileName)) {
                             file_put_contents($outputFileName, $buffer, FILE_APPEND);
