@@ -68,7 +68,7 @@ class Task
     {
         $dataAttr = $this->data;
         if (!isset($dataAttr[$attr])) {
-            throw new TaskException("task[{$attr}] not exists.");
+            throw new TaskException("task.[{$attr}] not exists.");
         }
         return $dataAttr[$attr];
     }
@@ -171,6 +171,6 @@ class Task
      */
     public function getErrorOutput()
     {
-        return $this->error_ouput;
+        return $this->error_output;
     }
 }
