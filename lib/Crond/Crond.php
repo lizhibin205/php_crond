@@ -300,7 +300,13 @@ class Crond
     {
         foreach ($this->processList as $taskUniqName => $process) {
             if ($process->isTerminated()) {
-                $this->logger->info($taskUniqName . " is terminated.");
+                $exitCode = $process->getExitCode();
+                $exitMessage = $process->getExitCodeText();
+                if ($process->isSuccessful()) {
+                    $this->logger->info($taskUniqName . " is terminated, with exit code {$exitCode}({$exitMessage}).");
+                } else {
+                    $this->logger->warn($taskUniqName . " is terminated, with exit code {$exitCode}({$exitMessage}).");
+                }
                 unset($this->processList[$taskUniqName]);
             }
         }
