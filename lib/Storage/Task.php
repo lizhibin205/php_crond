@@ -139,15 +139,6 @@ class Task
     }
 
     /**
-     * 获取唯一的任务名称
-     * @return string
-     */
-    public function getUniqTaskName()
-    {
-        return $this->single ? $this->name : $this->name . time();
-    }
-
-    /**
      * 获取执行命令
      * @return string
      */
