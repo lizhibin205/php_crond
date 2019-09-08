@@ -1,5 +1,5 @@
 <?php
-namespace Crond;
+namespace Crond\Exception;
 
 /**
  * Crond运行时异常
