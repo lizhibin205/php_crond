@@ -1,9 +1,9 @@
 <?php
 namespace Storage;
 
-use Crond\CrondRuntimeException;
+use Crond\Exception\CrondRuntimeException;
 
-class TaskList
+class TaskManager
 {
     private $list = [];
 
@@ -20,6 +20,7 @@ class TaskList
         foreach ($taskArrList as $taskName => $taskArr) {
             $this->addTask(Task::create($taskName, $taskArr));
         }
+        return $this;
     }
 
     /**
