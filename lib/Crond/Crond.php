@@ -12,6 +12,12 @@ use Crond\Process\ProcessWapper;
 class Crond
 {
     /**
+     * 计划任务执行周期
+     * @var integer
+     */
+    const PERIODIC = 1;
+
+    /**
      * 定时任务执行状态
      * @var boolean
      */
@@ -27,7 +33,7 @@ class Crond
      * 计划任务列表
      * @var TaskManager
      */
-    private $taskList;
+    private $taskManager;
 
     /**
      * 日志
@@ -44,10 +50,10 @@ class Crond
     /**
      * Crond
      */
-    public function __construct(Config $crondConfig, TaskManager $taskList)
+    public function __construct(Config $crondConfig, TaskManager $taskManager)
     {
         $this->crondConfig = $crondConfig;
-        $this->taskList = $taskList;
+        $this->taskManager = $taskManager;
     }
 
     /**
@@ -108,13 +114,13 @@ class Crond
             }
             //主进程定时器
             $this->running = true;
-            $loop->addPeriodicTimer(1, function (\React\EventLoop\Timer\Timer $timer) use($loop) {
+            $loop->addPeriodicTimer(self::PERIODIC, function (\React\EventLoop\Timer\Timer $timer) use($loop) {
                 list($execSecond, $execMintue, $execHour, $execDay, $execMonth, $execWeek) = \explode(' ', date("s i H d m w"));
                 //执行及具体任务
-                $matchTaskList = $this->taskList->findTask($execSecond, $execMintue, $execHour, $execDay, $execMonth, $execWeek);
+                $matchTaskList = $this->taskManager->findTask($execSecond, $execMintue, $execHour, $execDay, $execMonth, $execWeek);
                 foreach ($matchTaskList as $task) {
                     //获取任务的唯一名称
-                    $taskUniqName = $task->getTaskName() . $task->isSingle() ? time() : '';
+                    $taskUniqName = $task->getTaskName() . ($task->isSingle() ? "_" . time() : '');
                     //判断是否single的任务
                     if ($task->isSingle()) {
                         $pid = $this->processManager->getProcessPidByUniqName($taskUniqName);
@@ -127,8 +133,8 @@ class Crond
                     //执行任务
                     $processWapper = new ProcessWapper($task);
                     $processWapper->start();
-                    $this->logger->info($task->getTaskName() . "[{" . $task->getExecution()
-                        . "}] start.");
+                    $this->logger->info($task->getTaskName() . "[" . $task->getExecution()
+                        . "] start.");
                     $this->processManager->addWapper($processWapper, $taskUniqName);
                 }
                 //执行具体任务结束
@@ -172,7 +178,7 @@ class Crond
     public function reloadTask()
     {
         $this->logger->info('php_crond reloadTask has been called.');
-        $this->taskList->reloadTasks();
+        $this->taskManager->reloadTasks();
     }
 
     /**
