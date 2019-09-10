@@ -1,19 +1,21 @@
 <?php
 namespace Crond;
 
-use Symfony\Component\Process\Process;
 use React\EventLoop\Factory;
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
-use Storage\TaskList;
+use Storage\TaskManager;
+use Crond\Exception\CrondRuntimeException;
+use Crond\Process\Manager;
+use Crond\Process\ProcessWapper;
 
 class Crond
 {
     /**
-     * 进程执行列表
-     * @var array
+     * 计划任务执行周期
+     * @var integer
      */
-    private $processList = [];
+    const PERIODIC = 1;
 
     /**
      * 定时任务执行状态
@@ -29,9 +31,9 @@ class Crond
 
     /**
      * 计划任务列表
-     * @var TaskList
+     * @var TaskManager
      */
-    private $taskList;
+    private $taskManager;
 
     /**
      * 日志
@@ -40,12 +42,18 @@ class Crond
     private $logger;
 
     /**
+     * 子进程管理器
+     * @var Manager
+     */
+    private $processManager;
+
+    /**
      * Crond
      */
-    public function __construct(Config $crondConfig, TaskList $taskList)
+    public function __construct(Config $crondConfig, TaskManager $taskManager)
     {
         $this->crondConfig = $crondConfig;
-        $this->taskList = $taskList;
+        $this->taskManager = $taskManager;
     }
 
     /**
@@ -56,35 +64,33 @@ class Crond
     {
         //获取Crond启动配置
         $crondConfig = new Config();
-        //获取任务列表
-        $taskList = new TaskList();
-        $taskList->loadTasks();
         //日志记录器
         $logger = new Logger('crond');
         $logger->pushHandler(new StreamHandler($crondConfig->attr('log_file'), Logger::INFO));
 
         //初始化Crond实例
-        $crond = new Crond($crondConfig, $taskList);
+        $crond = new Crond($crondConfig, (new TaskManager())->loadTasks());
 
         //注册信号函数
         //用于安全关闭任务-USR1
-        if (PHP_OS !== 'WINNT') {
-            Signal::register(SIGUSR1, function($signal) use($crond) {
-                echo "please wait, shuting down the crond...", PHP_EOL;
-                $crond->shutdown();
-            });
-            //用户重载配置文件-USR2
-            Signal::register(SIGUSR2, function($signal) use($crond) {
-                echo "reload task config...", PHP_EOL;
-                $crond->reloadTask();
-            });
-            //接收子进程结束的信号
-            Signal::register(SIGCHLD, function($signal) use($crond) {
-                $crond->waitProcess();
-            });
-        }
+        Signal::register(SIGUSR1, function($signal) use($crond) {
+            echo "please wait, shuting down the crond...", PHP_EOL;
+            $crond->shutdown();
+        });
+        //用户重载配置文件-USR2
+        Signal::register(SIGUSR2, function($signal) use($crond) {
+            echo "reload task config...", PHP_EOL;
+            $crond->reloadTask();
+        });
+        //接收子进程结束的信号
+        Signal::register(SIGCHLD, function($signal) use($crond) {
+            $crond->waitProcess();
+        });
 
         $crond->setLogger($logger);
+        $crond->setProcessManager(new Manager());
+        //创建PID文件
+        $crond->createPidFile($crondConfig->attr('pid_file'));
         $crond->run();
     }
 
@@ -94,8 +100,6 @@ class Crond
     public function run()
     {
         try {
-            //创建PID文件
-            $this->createPidFile($this->crondConfig->attr('pid_file'));
             //程序开始记录日志
             $this->logger->info("php_crond start");
             //主进程循环执行任务
@@ -110,16 +114,16 @@ class Crond
             }
             //主进程定时器
             $this->running = true;
-            $loop->addPeriodicTimer(1, function (\React\EventLoop\Timer\Timer $timer) use($loop) {
+            $loop->addPeriodicTimer(self::PERIODIC, function (\React\EventLoop\Timer\Timer $timer) use($loop) {
                 list($execSecond, $execMintue, $execHour, $execDay, $execMonth, $execWeek) = \explode(' ', date("s i H d m w"));
                 //执行及具体任务
-                $matchTaskList = $this->taskList->findTask($execSecond, $execMintue, $execHour, $execDay, $execMonth, $execWeek);
+                $matchTaskList = $this->taskManager->findTask($execSecond, $execMintue, $execHour, $execDay, $execMonth, $execWeek);
                 foreach ($matchTaskList as $task) {
                     //获取任务的唯一名称
-                    $taskUniqName = $task->getUniqTaskName();
+                    $taskUniqName = $task->getTaskName() . ($task->isSingle() ? "_" . time() : '');
                     //判断是否single的任务
                     if ($task->isSingle()) {
-                        $pid = $this->getProcessPidByUniqName($taskUniqName);
+                        $pid = $this->processManager->getProcessPidByUniqName($taskUniqName);
                         if ($pid > 0) {
                             //跳过该任务
                             $this->logger->info($task->getTaskName() . " is running(pid={$pid})");
@@ -127,26 +131,15 @@ class Crond
                         }
                     }
                     //执行任务
-                    $processCommand = $task->getExecution();
-                    $process = new Process($processCommand);
-                    $process->start(function ($type, $buffer) use($task, $process) {
-                        //这个回调可能会被多次调用
-                        //如果任务没有输出，则不会被触发
-                        $outputFileName = $type === Process::ERR ? $task->getErrorOutput() : $task->getStandardOuput();
-                        if (!empty($outputFileName) || is_writable($outputFileName)) {
-                            file_put_contents($outputFileName, $buffer, FILE_APPEND);
-                        } else {
-                            $this->logger->error("Task " .$task->getTaskName() . " output is not writable.");
-                        }
-                    });
-                    $this->logger->info($task->getTaskName() . "[{$processCommand}] start.");
-                    $this->markProcess($taskUniqName, $process);
+                    $processWapper = new ProcessWapper($task);
+                    $processWapper->start();
+                    $this->logger->info($task->getTaskName() . "[" . $task->getExecution()
+                        . "] start.");
+                    $this->processManager->addWapper($processWapper, $taskUniqName);
                 }
                 //执行具体任务结束
                 //信号处理
-                if (PHP_OS !== 'WINNT') {
-                    pcntl_signal_dispatch();
-                }
+                Signal::dispatch();
                 //信号处理结束
                 if (!$this->alive()) {
                     $loop->cancelTimer($timer);
@@ -158,7 +151,7 @@ class Crond
 
             //主进程循环执行任务结束
             //等待所有子进程结束，结束进程
-            while ($this->isTasksAlive()) {
+            while ($this->processManager->hasTasksAlive()) {
                 sleep(1);
             }
         } catch (\Exception $ex) {
@@ -185,7 +178,7 @@ class Crond
     public function reloadTask()
     {
         $this->logger->info('php_crond reloadTask has been called.');
-        $this->taskList->reloadTasks();
+        $this->taskManager->reloadTasks();
     }
 
     /**
@@ -195,6 +188,14 @@ class Crond
     public function setLogger(Logger $logger)
     {
         $this->logger = $logger;
+    }
+
+    /**
+     * 设置子进程管理器
+     */
+    public function setProcessManager(Manager $manager)
+    {
+        $this->processManager = $manager;
     }
 
     /**
@@ -216,35 +217,11 @@ class Crond
     }
 
     /**
-     * 检测是否有任务在执行
-     * @return bool 如果有任务执行，返回true，否则返回false
-     */
-    public function isTasksAlive()
-    {
-        foreach ($this->processList as $process) {
-            if ($process->isRunning()) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
      * 获取正在运行的任务
      */
     public function getRunningTasks()
     {
-        $tasks = [];
-        foreach ($this->processList as $process) {
-            $pid = $process->getPid();
-            if ($pid > 0) {
-                $tasks[] = [
-                    'pid' => $pid,
-                    'command' => $process->getCommandLine(),
-                ];
-            }
-        }
-        return $tasks;
+        return $this->processManager->getRunningTasks();
     }
 
     /**
@@ -253,7 +230,7 @@ class Crond
      * @throws \RuntimeException
      * @return void
      */
-    private function createPidFile($pidFileName)
+    public function createPidFile($pidFileName)
     {
         if (\is_file($pidFileName)) {
             throw new CrondRuntimeException("pid file is exists, check the crond php is running or not!");
@@ -268,47 +245,11 @@ class Crond
     }
 
     /**
-     * 记录任务执行状态
-     * @param string $taskUniqName 任务唯一名称
-     * @param int $childPid 进程ID
-     */
-    private function markProcess($taskUniqName, Process $process)
-    {
-        $this->processList[$taskUniqName] = $process;
-    }
-
-    /**
-     * 获取任务的pid
-     * @param string $taskUniqName
-     * @return int
-     */
-    private function getProcessPidByUniqName($taskUniqName)
-    {
-        if (!isset($this->processList[$taskUniqName])) {
-            return 0;
-        }
-        $process = $this->processList[$taskUniqName];
-        $pid = $process->getPid();
-        return is_numeric($pid) ? $pid : 0;
-    }
-
-    /**
      * 处理子进程发送的SIGCHLD，防止僵尸进程
      * @return void
      */
-    private function waitProcess()
+    public function waitProcess()
     {
-        foreach ($this->processList as $taskUniqName => $process) {
-            if ($process->isTerminated()) {
-                $exitCode = $process->getExitCode();
-                $exitMessage = $process->getExitCodeText();
-                if ($process->isSuccessful()) {
-                    $this->logger->info($taskUniqName . " is terminated, with exit code {$exitCode}({$exitMessage}).");
-                } else {
-                    $this->logger->warn($taskUniqName . " is terminated, with exit code {$exitCode}({$exitMessage}).");
-                }
-                unset($this->processList[$taskUniqName]);
-            }
-        }
+        $this->processManager->waitProcess($this->logger);
     }
 }
