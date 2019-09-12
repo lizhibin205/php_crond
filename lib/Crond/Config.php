@@ -1,6 +1,8 @@
 <?php
 namespace Crond;
 
+use Crond\Exception\CrondRuntimeException;
+
 /**
  * 获取配置参数
  * @author lizhibin

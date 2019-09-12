@@ -47,7 +47,7 @@ class Manager
                 } else {
                     $logger->warn($wapperName . " is terminated, with exit code {$exitCode}({$exitMessage}).");
                 }
-                unset($this->processList[$wapperName]);
+                unset($this->processWapperList[$wapperName]);
             }
         }
     }
