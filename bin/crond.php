@@ -5,7 +5,7 @@
  * @daate 2017年5月25日
  */
 use Crond\Crond;
-use Storage\TaskList;
+use Storage\TaskManager;
 
 if (PHP_SAPI !== 'cli') {
     echo 'php crontab must run in cli!', PHP_EOL;
@@ -28,10 +28,10 @@ if (isset($options['h'])) {
     exit;
 }
 if (isset($options['a'])) {
-    $taskList = new TaskList();
-    $taskList->loadTasks();
-    foreach ($taskList->fetchTask() as $task) {
-        echo 'Show all tasks', PHP_EOL;
+    $taskManager = new TaskManager();
+    $taskManager->loadTasks();
+    foreach ($taskManager->fetchTask() as $task) {
+        echo 'show all tasks: ', PHP_EOL;
         echo $task->daemon ." " .$task->getExecution(), PHP_EOL;
     }
     exit;
