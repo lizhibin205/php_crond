@@ -139,6 +139,14 @@ class Task
     }
 
     /**
+     * 获取当前执行时的任务名称
+     */
+    public function getNowTaskName()
+    {
+        return $this->single ? $this->name : ($this->name . '_' . time());
+    }
+
+    /**
      * 获取执行命令
      * @return string
      */

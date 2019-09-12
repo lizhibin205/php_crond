@@ -18,6 +18,12 @@ class Crond
     const PERIODIC = 1;
 
     /**
+     * 等待子进程结束间隔时间，默认1s
+     * @var integer
+     */
+    const SHUTDOWN_WAIT_MICRO_SECOND = 1000000;
+
+    /**
      * 定时任务执行状态
      * @var boolean
      */
@@ -74,16 +80,17 @@ class Crond
         //注册信号函数
         //用于安全关闭任务-USR1
         Signal::register(SIGUSR1, function($signal) use($crond) {
-            echo "please wait, shuting down the crond...", PHP_EOL;
+            echo "singal({$signal}), please wait, shuting down the crond...", PHP_EOL;
             $crond->shutdown();
         });
         //用户重载配置文件-USR2
         Signal::register(SIGUSR2, function($signal) use($crond) {
-            echo "reload task config...", PHP_EOL;
+            echo "singal({$signal}), reload task config...", PHP_EOL;
             $crond->reloadTask();
         });
         //接收子进程结束的信号
         Signal::register(SIGCHLD, function($signal) use($crond) {
+            echo "singal({$signal}), child process stop", PHP_EOL;
             $crond->waitProcess();
         });
 
@@ -120,7 +127,7 @@ class Crond
                 $matchTaskList = $this->taskManager->findTask($execSecond, $execMintue, $execHour, $execDay, $execMonth, $execWeek);
                 foreach ($matchTaskList as $task) {
                     //获取任务的唯一名称
-                    $taskUniqName = $task->getTaskName() . ($task->isSingle() ? "_" . time() : '');
+                    $taskUniqName = $task->getNowTaskName();
                     //判断是否single的任务
                     if ($task->isSingle()) {
                         $pid = $this->processManager->getProcessPidByUniqName($taskUniqName);
@@ -152,7 +159,7 @@ class Crond
             //主进程循环执行任务结束
             //等待所有子进程结束，结束进程
             while ($this->processManager->hasTasksAlive()) {
-                sleep(1);
+                usleep(self::SHUTDOWN_WAIT_MICRO_SECOND);
             }
         } catch (\Exception $ex) {
             $this->logger->error($ex->getMessage(), $ex->getTrace());
