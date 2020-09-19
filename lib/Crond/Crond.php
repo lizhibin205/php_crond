@@ -75,29 +75,19 @@ class Crond
         $logger->pushHandler(new StreamHandler($crondConfig->attr('log_file'), Logger::INFO));
 
         //初始化Crond实例
+        $logger->info("create crond...");
         $crond = new Crond($crondConfig, (new TaskManager())->loadTasks());
-
-        //注册信号函数
-        //用于安全关闭任务-USR1
-        Signal::register(SIGUSR1, function($signal) use($crond) {
-            echo "singal({$signal}), please wait, shuting down the crond...", PHP_EOL;
-            $crond->shutdown();
-        });
-        //用户重载配置文件-USR2
-        Signal::register(SIGUSR2, function($signal) use($crond) {
-            echo "singal({$signal}), reload task config...", PHP_EOL;
-            $crond->reloadTask();
-        });
-        //接收子进程结束的信号
-        Signal::register(SIGCHLD, function($signal) use($crond) {
-            echo "singal({$signal}), child process stop", PHP_EOL;
-            $crond->waitProcess();
-        });
-
         $crond->setLogger($logger);
         $crond->setProcessManager(new Manager());
         //创建PID文件
         $crond->createPidFile($crondConfig->attr('pid_file'));
+
+        //注册信号函数
+        //用于安全关闭任务-USR1
+        $logger->info("register crond signal...");
+        Signal::registerAll($crond);
+
+        //启动，核心循环
         $crond->run();
     }
 

@@ -3,18 +3,23 @@ namespace Crond;
 
 class Signal
 {
-    /**
-     * 注册信号时间
-     * @param int $signal
-     * @param callback $callback
-     * @return boolean
-     */
-    public static function register($signal, $callback)
+    public static function registerAll(Crond $crond)
     {
-        if (PHP_OS !== 'WINNT') {
-            return pcntl_signal($signal, $callback);
+        if (PHP_OS === 'WINNT') {
+            return;
         }
-        return false;
+        //用户安全关闭-USR1
+        pcntl_signal(SIGUSR1, function($signal) use($crond) {
+            $crond->shutdown();
+        });
+        //用户重载配置文件-USR2
+        pcntl_signal(SIGUSR2, function($signal) use($crond) {
+            $crond->reloadTask();
+        });
+        //接收子进程结束的信号
+        pcntl_signal(SIGCHLD, function($signal) use($crond) {
+            $crond->waitProcess();
+        });
     }
 
     /**

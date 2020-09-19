@@ -28,8 +28,8 @@ class ProcessWapper
      */
     public function start()
     {
-        $processCommand = $this->task->getExecution();
-        $this->process = new Process($processCommand);
+        $processCommandArray = $this->task->getExecutionArray();
+        $this->process = new Process($processCommandArray);
         $this->process->start(function ($type, $buffer) {
             //这个回调可能会被多次调用
             //如果任务没有输出，则不会被触发
