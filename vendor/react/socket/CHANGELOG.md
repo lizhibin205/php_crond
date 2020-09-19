@@ -1,5 +1,64 @@
 # Changelog
 
+## 1.6.0 (2020-08-28)
+
+*   Feature: Support upcoming PHP 8 release.
+    (#246 by @clue)
+
+*   Feature: Change default socket backlog size to 511.
+    (#242 by @clue)
+
+*   Fix: Fix closing connection when cancelling during TLS handshake.
+    (#241 by @clue)
+
+*   Fix: Fix blocking during possible `accept()` race condition
+    when multiple socket servers listen on same socket address.
+    (#244 by @clue)
+
+*   Improve test suite, update PHPUnit config and add full core team to the license.
+    (#243 by @SimonFrings and #245 by @WyriHaximus)
+
+## 1.5.0 (2020-07-01)
+
+*   Feature / Fix: Improve error handling and reporting for happy eyeballs and
+    immediately try next connection when one connection attempt fails.
+    (#230, #231, #232 and #233 by @clue)
+
+    Error messages for failed connection attempts now include more details to
+    ease debugging. Additionally, the happy eyeballs algorithm has been improved
+    to avoid having to wait for some timers to expire which significantly
+    improves connection setup times (in particular when IPv6 isn't available).
+
+*   Improve test suite, minor code cleanup and improve code coverage to 100%.
+    Update to PHPUnit 9 and skip legacy TLS 1.0 / TLS 1.1 tests if disabled by
+    system. Run tests on Windows and simplify Travis CI test matrix for Mac OS X
+    setup and skip all TLS tests on legacy HHVM.
+    (#229, #235, #236 and #238 by @clue and #239 by @SimonFrings)
+
+## 1.4.0 (2020-03-12)
+
+A major new feature release, see [**release announcement**](https://clue.engineering/2020/introducing-ipv6-for-reactphp).
+
+*   Feature: Add IPv6 support to `Connector` (implement "Happy Eyeballs" algorithm to support IPv6 probing).
+    IPv6 support is turned on by default, use new `happy_eyeballs` option in `Connector` to toggle behavior.
+    (#196, #224 and #225 by @WyriHaximus and @clue)
+
+*   Feature: Default to using DNS cache (with max 256 entries) for `Connector`.
+    (#226 by @clue)
+
+*   Add `.gitattributes` to exclude dev files from exports and some minor code style fixes.
+    (#219 by @reedy and #218 by @mmoreram)
+
+*   Improve test suite to fix failing test cases when using new DNS component,
+    significantly improve test performance by awaiting events instead of sleeping,
+    exclude TLS 1.3 test on PHP 7.3, run tests on PHP 7.4 and simplify test matrix.
+    (#208, #209, #210, #217 and #223 by @clue)
+
+## 1.3.0 (2019-07-10)
+
+*   Feature: Forward compatibility with upcoming stable DNS component.
+    (#206 by @clue)
+
 ## 1.2.1 (2019-06-03)
 
 *   Avoid uneeded fragmented TLS work around for PHP 7.3.3+ and 

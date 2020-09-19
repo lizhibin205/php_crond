@@ -98,7 +98,7 @@ final class TcpServer extends EventEmitter implements ServerInterface
      * See the exception message and code for more details about the actual error
      * condition.
      *
-     * Optionally, you can specify [socket context options](http://php.net/manual/en/context.socket.php)
+     * Optionally, you can specify [socket context options](https://www.php.net/manual/en/context.socket.php)
      * for the underlying stream socket resource like this:
      *
      * ```php
@@ -109,10 +109,11 @@ final class TcpServer extends EventEmitter implements ServerInterface
      * ));
      * ```
      *
-     * Note that available [socket context options](http://php.net/manual/en/context.socket.php),
+     * Note that available [socket context options](https://www.php.net/manual/en/context.socket.php),
      * their defaults and effects of changing these may vary depending on your system
      * and/or PHP version.
      * Passing unknown context options has no effect.
+     * The `backlog` context option defaults to `511` unless given explicitly.
      *
      * @param string|int    $uri
      * @param LoopInterface $loop
@@ -158,12 +159,12 @@ final class TcpServer extends EventEmitter implements ServerInterface
             $errno,
             $errstr,
             \STREAM_SERVER_BIND | \STREAM_SERVER_LISTEN,
-            \stream_context_create(array('socket' => $context))
+            \stream_context_create(array('socket' => $context + array('backlog' => 511)))
         );
         if (false === $this->master) {
             throw new \RuntimeException('Failed to listen on "' . $uri . '": ' . $errstr, $errno);
         }
-        \stream_set_blocking($this->master, 0);
+        \stream_set_blocking($this->master, false);
 
         $this->resume();
     }
@@ -179,8 +180,7 @@ final class TcpServer extends EventEmitter implements ServerInterface
         // check if this is an IPv6 address which includes multiple colons but no square brackets
         $pos = \strrpos($address, ':');
         if ($pos !== false && \strpos($address, ':') < $pos && \substr($address, 0, 1) !== '[') {
-            $port = \substr($address, $pos + 1);
-            $address = '[' . \substr($address, 0, $pos) . ']:' . $port;
+            $address = '[' . \substr($address, 0, $pos) . ']:' . \substr($address, $pos + 1); // @codeCoverageIgnore
         }
 
         return 'tcp://' . $address;
@@ -204,7 +204,7 @@ final class TcpServer extends EventEmitter implements ServerInterface
 
         $that = $this;
         $this->loop->addReadStream($this->master, function ($master) use ($that) {
-            $newSocket = @\stream_socket_accept($master);
+            $newSocket = @\stream_socket_accept($master, 0);
             if (false === $newSocket) {
                 $that->emit('error', array(new \RuntimeException('Error accepting new connection')));
 

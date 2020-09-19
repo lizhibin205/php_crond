@@ -4,8 +4,9 @@ namespace React\Dns\Query;
 
 use React\Promise\CancellablePromiseInterface;
 use React\Promise\Deferred;
+use React\Promise\PromiseInterface;
 
-class RetryExecutor implements ExecutorInterface
+final class RetryExecutor implements ExecutorInterface
 {
     private $executor;
     private $retries;
@@ -16,15 +17,15 @@ class RetryExecutor implements ExecutorInterface
         $this->retries = $retries;
     }
 
-    public function query($nameserver, Query $query)
+    public function query(Query $query)
     {
-        return $this->tryQuery($nameserver, $query, $this->retries);
+        return $this->tryQuery($query, $this->retries);
     }
 
-    public function tryQuery($nameserver, Query $query, $retries)
+    public function tryQuery(Query $query, $retries)
     {
         $deferred = new Deferred(function () use (&$promise) {
-            if ($promise instanceof CancellablePromiseInterface) {
+            if ($promise instanceof CancellablePromiseInterface || (!\interface_exists('React\Promise\CancellablePromiseInterface') && \method_exists($promise, 'cancel'))) {
                 $promise->cancel();
             }
         });
@@ -35,7 +36,7 @@ class RetryExecutor implements ExecutorInterface
         };
 
         $executor = $this->executor;
-        $errorback = function ($e) use ($deferred, &$promise, $nameserver, $query, $success, &$errorback, &$retries, $executor) {
+        $errorback = function ($e) use ($deferred, &$promise, $query, $success, &$errorback, &$retries, $executor) {
             if (!$e instanceof TimeoutException) {
                 $errorback = null;
                 $deferred->reject($e);
@@ -52,24 +53,30 @@ class RetryExecutor implements ExecutorInterface
                 $r = new \ReflectionProperty('Exception', 'trace');
                 $r->setAccessible(true);
                 $trace = $r->getValue($e);
+
+                // Exception trace arguments are not available on some PHP 7.4 installs
+                // @codeCoverageIgnoreStart
                 foreach ($trace as &$one) {
-                    foreach ($one['args'] as &$arg) {
-                        if ($arg instanceof \Closure) {
-                            $arg = 'Object(' . \get_class($arg) . ')';
+                    if (isset($one['args'])) {
+                        foreach ($one['args'] as &$arg) {
+                            if ($arg instanceof \Closure) {
+                                $arg = 'Object(' . \get_class($arg) . ')';
+                            }
                         }
                     }
                 }
+                // @codeCoverageIgnoreEnd
                 $r->setValue($e, $trace);
             } else {
                 --$retries;
-                $promise = $executor->query($nameserver, $query)->then(
+                $promise = $executor->query($query)->then(
                     $success,
                     $errorback
                 );
             }
         };
 
-        $promise = $this->executor->query($nameserver, $query)->then(
+        $promise = $this->executor->query($query)->then(
             $success,
             $errorback
         );
