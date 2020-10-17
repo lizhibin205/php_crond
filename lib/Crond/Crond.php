@@ -69,7 +69,7 @@ class Crond
     public static function start()
     {
         //获取Crond启动配置
-        $crondConfig = ConfigBuiler::readConfigFromFile()
+        $crondConfig = ConfigBuilder::readConfigFromFile()
             ->build();
         //日志记录器
         $logger = new Logger('crond');
@@ -104,10 +104,9 @@ class Crond
             $loop = Factory::create();
             $this->logger->info("php_crond start LoopInterface with ". get_class($loop));
             //HTTP启动
-            $httpConfig = $this->crondConfig->attr('http_server');
-            if ($httpConfig['switch'] === true) {
+            if ($this->crondConfig->getHttpSwitch()) {
                 $httpServer = \Http\Server::createHttpServer($this);
-                $socket = new \React\Socket\Server($httpConfig['port'], $loop);
+                $socket = new \React\Socket\Server($this->crondConfig->getHttpPort(), $loop);
                 $httpServer->listen($socket);
             }
             //主进程定时器

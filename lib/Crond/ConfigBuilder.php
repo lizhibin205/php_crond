@@ -3,7 +3,7 @@ namespace Crond;
 
 use function Composer\Autoload\includeFile;
 
-class ConfigBuiler
+class ConfigBuilder
 {
     /**
      * 模式
@@ -27,12 +27,12 @@ class ConfigBuiler
 
     /**
      * 创建配置
-     * @return ConfigBuiler
+     * @return ConfigBuilder
      */
-    public static function readConfigFromFile() : ConfigBuiler
+    public static function readConfigFromFile() : ConfigBuilder
     {
         $configFileData = include PROJECT_ROOT . "/config/base.php";
-        $configBuiler = new ConfigBuiler();
+        $configBuiler = new ConfigBuilder();
         $configBuiler->model($configFileData['model'])
             ->logFile($configFileData['log_file'])->pidFile($configFileData['pid_file'])
             ->httpSwitch($configFileData['http_switch'])
@@ -42,43 +42,43 @@ class ConfigBuiler
         return $configBuiler;
     }
 
-    public function model(string $model) : ConfigBuiler
+    public function model(string $model) : ConfigBuilder
     {
         $this->model = $model;
         return $this;
     }
 
-    public function logFile(string $logFile) : ConfigBuiler
+    public function logFile(string $logFile) : ConfigBuilder
     {
         $this->logFile = $logFile;
         return $this;
     }
 
-    public function pidFile(string $pidFile) : ConfigBuiler
+    public function pidFile(string $pidFile) : ConfigBuilder
     {
         $this->pidFile = $pidFile;
         return $this;
     }
 
-    public function httpSwitch(bool $httpSwitch) : ConfigBuiler
+    public function httpSwitch(bool $httpSwitch) : ConfigBuilder
     {
         $this->httpSwitch = $httpSwitch;
         return $this;
     }
 
-    public function httpListen(string $httpListen) : ConfigBuiler
+    public function httpListen(string $httpListen) : ConfigBuilder
     {
         $this->httpListen = $httpListen;
         return $this;
     }
 
-    public function httpPort(int $httpPort) : ConfigBuiler
+    public function httpPort(int $httpPort) : ConfigBuilder
     {
         $this->httpPort = $httpPort;
         return $this;
     }
 
-    public function httpLog(string $httpLog) : ConfigBuiler
+    public function httpLog(string $httpLog) : ConfigBuilder
     {
         $this->httpLog = $httpLog;
         return $this;
@@ -94,6 +94,10 @@ class ConfigBuiler
         $config->setModel($this->model);
         $config->setLogFile($this->logFile);
         $config->setPidFile($this->pidFile);
+        $config->setHttpSwitch($this->httpSwitch);
+        $config->setHttpListen($this->httpListen);
+        $config->setHttpPort($this->httpPort);
+        $config->setHttpLog($this->httpLog);
         return $config;
     }
 }
