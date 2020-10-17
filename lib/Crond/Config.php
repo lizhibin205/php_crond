@@ -1,8 +1,6 @@
 <?php
 namespace Crond;
 
-use Crond\Exception\CrondRuntimeException;
-
 /**
  * 获取配置参数
  * @author lizhibin
@@ -11,32 +9,43 @@ use Crond\Exception\CrondRuntimeException;
 class Config
 {
     /**
-     * Crond服务配置数据
-     * @var array
+     * 模式
+     * @var string
      */
-    private $configData = [];
-
-    public function __construct()
-    {
-        $filename = PROJECT_ROOT . "/config/base.php";
-        if (is_file($filename)) {
-            $this->configData = include $filename;
-        } else {
-            throw new CrondRuntimeException("php_crond base config file not exists!");
-        }
-    }
-
+    private $model;
     /**
-     * 获取php_crond配置
-     * @param string $name 属性名
+     * 日志文件
+     * @var string
      */
-    public function attr($name)
+    private $logFile;
+    /**
+     * 进程文件
+     * @var string
+     */
+    private $pidFile;
+
+    public function getModel() : string
     {
-        $config = $this->configData;
-        if (isset($config[$name])) {
-            return $config[$name];
-        } else {
-            throw new CrondRuntimeException("php_crond base config[{$name}] not exists!");
-        }
+        return $this->model;
+    }
+    public function setModel(string $model) : void
+    {
+        $this->model = $model;
+    }
+    public function getLogFile() : string
+    {
+        return $this->logFile;
+    }
+    public function setLogFile(string $logFile) : void
+    {
+        $this->logFile = $logFile;
+    }
+    public function getPidFile() : string
+    {
+        return $this->pidFile;
+    }
+    public function setPidFile(string $pidFile) : void
+    {
+        $this->pidFile = $pidFile;
     }
 }

@@ -69,10 +69,11 @@ class Crond
     public static function start()
     {
         //获取Crond启动配置
-        $crondConfig = new Config();
+        $crondConfig = ConfigBuiler::readConfigFromFile()
+            ->build();
         //日志记录器
         $logger = new Logger('crond');
-        $logger->pushHandler(new StreamHandler($crondConfig->attr('log_file'), Logger::INFO));
+        $logger->pushHandler(new StreamHandler($crondConfig->getLogFile(), Logger::INFO));
 
         //初始化Crond实例
         $logger->info("create crond...");
@@ -80,7 +81,7 @@ class Crond
         $crond->setLogger($logger);
         $crond->setProcessManager(new Manager());
         //创建PID文件
-        $crond->createPidFile($crondConfig->attr('pid_file'));
+        $crond->createPidFile($crondConfig->getPidFile());
 
         //注册信号函数
         //用于安全关闭任务-USR1
