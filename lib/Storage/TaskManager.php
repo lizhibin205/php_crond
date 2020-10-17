@@ -64,5 +64,18 @@ class TaskManager
             yield $task;
         }
     }
+
+    /**
+     * 返回当前配置的任务列表
+     * @return array
+     */
+    public function getAllTasks() : array
+    {
+        $list = [];
+        foreach ($this->list as $task) {
+            $list[] = $task->getData();
+        }
+        return $list;
+    }
 }
 

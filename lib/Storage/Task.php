@@ -181,4 +181,13 @@ class Task
     {
         return $this->error_output;
     }
+
+    /**
+     * 返回任务配置数据
+     * @return array
+     */
+    public function getData() : array
+    {
+        return $this->data;
+    }
 }

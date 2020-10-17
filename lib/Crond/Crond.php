@@ -249,4 +249,13 @@ class Crond
     {
         $this->processManager->waitProcess($this->logger);
     }
+
+    /**
+     * 返回当前所有的任务列表
+     * @return array
+     */
+    public function getAllTasks() : array
+    {
+        return $this->taskManager->getAllTasks();
+    }
 }
