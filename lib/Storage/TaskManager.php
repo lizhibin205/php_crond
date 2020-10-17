@@ -2,6 +2,8 @@
 namespace Storage;
 
 use Crond\Exception\CrondRuntimeException;
+use Monolog\Logger;
+use Storage\Security\CommandRule;
 
 class TaskManager
 {
@@ -10,15 +12,41 @@ class TaskManager
     /**
      * 加载任务
      */
-    public function loadTasks()
+    public function loadTasks(Logger $logger) : TaskManager
     {
-        $filename = PROJECT_ROOT . "/config/task.php";
-        if (!is_file($filename)) {
-            throw new CrondRuntimeException("Counld not load task config file.");
+        $taskFilename = PROJECT_ROOT . "/config/task.php";
+        if (!is_file($taskFilename)) {
+            throw new CrondRuntimeException("counld not load task config file.");
         }
-        $taskArrList = include PROJECT_ROOT . "/config/task.php";
+        $securityCommandList = [];
+        $securityFilename = PROJECT_ROOT . "/config/security.php";
+        if (is_file($securityFilename)) {
+            $securityCommandList = include $securityFilename;
+            if (!is_array($securityCommandList)) {
+                throw new CrondRuntimeException("security file must be return array.");
+            }
+            foreach ($securityCommandList as $securityCommand) {
+                if (!($securityCommand instanceof CommandRule)) {
+                    throw new CrondRuntimeException("security command element must be implements CommandRule.");
+                }
+            }
+        }
+
+        $taskArrList = include $taskFilename;
         foreach ($taskArrList as $taskName => $taskArr) {
-            $this->addTask(Task::create($taskName, $taskArr));
+            $task = Task::create($taskName, $taskArr);
+            //安全性检测
+            $securityPass = false;
+            foreach ($securityCommandList as $securityCommand) {
+                if ($securityCommand->check($task->filename)) {
+                    $securityPass = true;
+                    break;
+                }
+            }
+            if ($securityPass) {
+                $this->addTask($task);
+            }
+            $logger->warning("task {$taskName} security unpass.");
         }
         return $this;
     }
@@ -26,7 +54,7 @@ class TaskManager
     /**
      * 重新加载任务
      */
-    public function reloadTasks()
+    public function reloadTasks() : void
     {
         $this->list = [];
         $this->loadTasks();
@@ -36,7 +64,7 @@ class TaskManager
      * 添加任务
      * @param Task $task
      */
-    public function addTask(Task $task)
+    public function addTask(Task $task) : void
     {
         $this->list[] = $task;
     }

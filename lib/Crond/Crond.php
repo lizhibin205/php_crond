@@ -77,7 +77,7 @@ class Crond
 
         //初始化Crond实例
         $logger->info("create crond...");
-        $crond = new Crond($crondConfig, (new TaskManager())->loadTasks());
+        $crond = new Crond($crondConfig, (new TaskManager())->loadTasks($logger));
         $crond->setLogger($logger);
         $crond->setProcessManager(new Manager());
         //创建PID文件

@@ -5,4 +5,5 @@ logs/
 .project
 config/base.php
 config/task.php
+config/security.php
 examples/
