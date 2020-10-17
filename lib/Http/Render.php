@@ -1,7 +1,7 @@
 <?php
 namespace Http;
 
-use React\Http\Response;
+use React\Http\Message\Response;
 
 class Render
 {
@@ -12,7 +12,7 @@ class Render
      * @param int $jsonCode  Json状态码
      * @param string $jsonMessage  Json 信息
      * @param mixed $jsonData  Json数据
-     * @return \React\Http\Response
+     * @return \React\Http\Message\Response
      */
     public static function json($httpStatus, $headerList, $jsonCode, $jsonMessage, $jsonData)
     {
@@ -32,7 +32,7 @@ class Render
      * @param int $httpStatus HTTP状态码
      * @param array $headerList Http header
      * @param string $html  html页面数据
-     * @return \React\Http\Response
+     * @return \React\Http\Message\Response
      */
     public static function html($httpStatus, $headerList, $html)
     {

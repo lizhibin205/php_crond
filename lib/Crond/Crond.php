@@ -105,7 +105,7 @@ class Crond
             $this->logger->info("php_crond start LoopInterface with ". get_class($loop));
             //HTTP启动
             if ($this->crondConfig->getHttpSwitch()) {
-                $httpServer = \Http\Server::createHttpServer($this);
+                $httpServer = \Http\Server::createHttpServer($loop, $this);
                 $socket = new \React\Socket\Server($this->crondConfig->getHttpPort(), $loop);
                 $httpServer->listen($socket);
             }

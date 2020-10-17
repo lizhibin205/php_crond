@@ -5,6 +5,10 @@ use Http\Render;
 
 final class Page extends BaseController
 {
+    /**
+     * php_crond状态
+     * @return \React\Http\Message\Response
+     */
     public function index()
     {
         $jsonData = [
