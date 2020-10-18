@@ -46,8 +46,9 @@ class TaskManager
             }
             if ($securityPass) {
                 $this->addTask($task);
+            } else {
+                $logger->warning("task {$taskName} security check failure.");
             }
-            $logger->warning("task {$taskName} security check failure.");
         }
         return $this;
     }
