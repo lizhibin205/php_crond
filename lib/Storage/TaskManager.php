@@ -29,6 +29,7 @@ class TaskManager
                 if (!($securityCommand instanceof CommandRule)) {
                     throw new CrondRuntimeException("security command element must be implements CommandRule.");
                 }
+                $logger->info("load security command rule: {$securityCommand}");
             }
         }
 
@@ -38,7 +39,7 @@ class TaskManager
             //安全性检测
             $securityPass = false;
             foreach ($securityCommandList as $securityCommand) {
-                if ($securityCommand->check($task->filename)) {
+                if ($securityCommand->check($task->getFilename())) {
                     $securityPass = true;
                     break;
                 }
@@ -46,7 +47,7 @@ class TaskManager
             if ($securityPass) {
                 $this->addTask($task);
             }
-            $logger->warning("task {$taskName} security unpass.");
+            $logger->warning("task {$taskName} security check failure.");
         }
         return $this;
     }

@@ -147,12 +147,21 @@ class Task
     }
 
     /**
-     * 获取执行命令
+     * 获取执行命令-带参数
      * @return string
      */
     public function getExecution() : string
     {
         return "{$this->filename} " . implode(" ", $this->params);
+    }
+
+    /**
+     * 获取执行命令
+     * @return string
+     */
+    public function getFilename() : string
+    {
+        return $this->filename;
     }
 
     /**
