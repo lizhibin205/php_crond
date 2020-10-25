@@ -175,7 +175,7 @@ class Crond
     public function reloadTask()
     {
         $this->logger->info('php_crond reloadTask has been called.');
-        $this->taskManager->reloadTasks();
+        $this->taskManager->reloadTasks($this->logger);
     }
 
     /**
