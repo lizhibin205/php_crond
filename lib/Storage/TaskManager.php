@@ -56,10 +56,10 @@ class TaskManager
     /**
      * 重新加载任务
      */
-    public function reloadTasks() : void
+    public function reloadTasks(Logger $logger) : void
     {
         $this->list = [];
-        $this->loadTasks();
+        $this->loadTasks($logger);
     }
 
     /**
