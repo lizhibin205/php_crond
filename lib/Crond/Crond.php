@@ -69,35 +69,26 @@ class Crond
     public static function start()
     {
         //获取Crond启动配置
-        $crondConfig = new Config();
+        $crondConfig = ConfigBuilder::readConfigFromFile()
+            ->build();
         //日志记录器
         $logger = new Logger('crond');
-        $logger->pushHandler(new StreamHandler($crondConfig->attr('log_file'), Logger::INFO));
+        $logger->pushHandler(new StreamHandler($crondConfig->getLogFile(), Logger::INFO));
 
         //初始化Crond实例
-        $crond = new Crond($crondConfig, (new TaskManager())->loadTasks());
-
-        //注册信号函数
-        //用于安全关闭任务-USR1
-        Signal::register(SIGUSR1, function($signal) use($crond) {
-            echo "singal({$signal}), please wait, shuting down the crond...", PHP_EOL;
-            $crond->shutdown();
-        });
-        //用户重载配置文件-USR2
-        Signal::register(SIGUSR2, function($signal) use($crond) {
-            echo "singal({$signal}), reload task config...", PHP_EOL;
-            $crond->reloadTask();
-        });
-        //接收子进程结束的信号
-        Signal::register(SIGCHLD, function($signal) use($crond) {
-            echo "singal({$signal}), child process stop", PHP_EOL;
-            $crond->waitProcess();
-        });
-
+        $logger->info("create crond...");
+        $crond = new Crond($crondConfig, (new TaskManager())->loadTasks($logger));
         $crond->setLogger($logger);
         $crond->setProcessManager(new Manager());
         //创建PID文件
-        $crond->createPidFile($crondConfig->attr('pid_file'));
+        $crond->createPidFile($crondConfig->getPidFile());
+
+        //注册信号函数
+        //用于安全关闭任务-USR1
+        $logger->info("register crond signal...");
+        Signal::registerAll($crond);
+
+        //启动，核心循环
         $crond->run();
     }
 
@@ -113,10 +104,9 @@ class Crond
             $loop = Factory::create();
             $this->logger->info("php_crond start LoopInterface with ". get_class($loop));
             //HTTP启动
-            $httpConfig = $this->crondConfig->attr('http_server');
-            if ($httpConfig['switch'] === true) {
-                $httpServer = \Http\Server::createHttpServer($this);
-                $socket = new \React\Socket\Server($httpConfig['port'], $loop);
+            if ($this->crondConfig->getHttpSwitch()) {
+                $httpServer = \Http\Server::createHttpServer($loop, $this);
+                $socket = new \React\Socket\Server($this->crondConfig->getHttpPort(), $loop);
                 $httpServer->listen($socket);
             }
             //主进程定时器
@@ -185,7 +175,7 @@ class Crond
     public function reloadTask()
     {
         $this->logger->info('php_crond reloadTask has been called.');
-        $this->taskManager->reloadTasks();
+        $this->taskManager->reloadTasks($this->logger);
     }
 
     /**
@@ -258,5 +248,14 @@ class Crond
     public function waitProcess()
     {
         $this->processManager->waitProcess($this->logger);
+    }
+
+    /**
+     * 返回当前所有的任务列表
+     * @return array
+     */
+    public function getAllTasks() : array
+    {
+        return $this->taskManager->getAllTasks();
     }
 }

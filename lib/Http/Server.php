@@ -3,15 +3,19 @@ namespace Http;
 
 use Crond\Crond;
 use Psr\Http\Message\ServerRequestInterface;
+use React\EventLoop\LoopInterface;
 
 class Server
 {
     /**
      * 创建一个HttpServer
+     * @param LoopInterface $loop
+     * @param Crond $crond
+     * @return \React\Http\Server
      */
-    public static function createHttpServer(Crond $crond)
+    public static function createHttpServer(LoopInterface $loop, Crond $crond) : \React\Http\Server
     {
-        $httpServer = new \React\Http\Server(function (ServerRequestInterface $request) use ($crond) {
+        $httpServer = new \React\Http\Server($loop, function (ServerRequestInterface $request) use ($crond) {
             $getParams = $request->getQueryParams();
             $controller = ucfirst(isset($getParams['c']) ? $getParams['c'] : 'Page');
             $action = isset($getParams['a']) ? $getParams['a'] : 'index';

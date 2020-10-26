@@ -7,7 +7,7 @@ final class Console extends BaseController
 {
     /**
      * 关闭Crond
-     * @return \React\Http\Response
+     * @return \React\Http\Message\Response
      */
     public function shutdown()
     {
@@ -17,7 +17,7 @@ final class Console extends BaseController
 
     /**
      * 重新加载任务配置
-     * @return \React\Http\Response
+     * @return \React\Http\Message\Response
      */
     public function reloadTasks()
     {

@@ -17,7 +17,7 @@ class Task
      */
     private $data;
 
-    public function __construct($name, array $data)
+    public function __construct(string $name, array $data)
     {
         $this->name = $name;
         $this->data = $data;
@@ -29,9 +29,9 @@ class Task
      * @throws TaskException
      * @return Task
      */
-    public static function create($name, array $task)
+    public static function create(string $name, array $task)
     {
-        if (!is_string($name) || empty($name)) {
+        if (empty($name)) {
             throw new TaskException("Task name must be string and can not be empty.");
         }
 
@@ -124,7 +124,7 @@ class Task
     /**
      * 判断任务是否单例
      */
-    public function isSingle()
+    public function isSingle() : bool
     {
         return $this->single;
     }
@@ -133,7 +133,7 @@ class Task
      * 获取任务名称
      * @return string
      */
-    public function getTaskName()
+    public function getTaskName() : string
     {
         return $this->name;
     }
@@ -141,25 +141,43 @@ class Task
     /**
      * 获取当前执行时的任务名称
      */
-    public function getNowTaskName()
+    public function getNowTaskName() : string
     {
         return $this->single ? $this->name : ($this->name . '_' . time());
+    }
+
+    /**
+     * 获取执行命令-带参数
+     * @return string
+     */
+    public function getExecution() : string
+    {
+        return "{$this->filename} " . implode(" ", $this->params);
     }
 
     /**
      * 获取执行命令
      * @return string
      */
-    public function getExecution()
+    public function getFilename() : string
     {
-        return "{$this->filename} " . implode(" ", $this->params);
+        return $this->filename;
+    }
+
+    /**
+     * 获取执行命令-返回数组类型
+     * @return string
+     */
+    public function getExecutionArray() : array
+    {
+        return array_merge([$this->filename], $this->params);
     }
 
     /**
      * 获取标准输出
      * @return string
      */
-    public function getStandardOuput()
+    public function getStandardOuput() : string
     {
         return $this->standard_ouput;
     }
@@ -168,8 +186,17 @@ class Task
      * 获取错误输出
      * @return string
      */
-    public function getErrorOutput()
+    public function getErrorOutput() : string
     {
         return $this->error_output;
+    }
+
+    /**
+     * 返回任务配置数据
+     * @return array
+     */
+    public function getData() : array
+    {
+        return $this->data;
     }
 }

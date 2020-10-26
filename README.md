@@ -107,3 +107,16 @@ return \Storage\Reader::registerTaskRemote($url, $serverId);
     }
 }
 ```
+
+安全配置
+---------------
+任务配置文件config/security.php
+
+```php
+use Storage\Security\FixedCommandRule;
+
+return [
+    //固定命令
+    new FixedCommandRule("sleep"),
+];
+```
