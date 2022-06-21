@@ -11,7 +11,7 @@
 		"symfony/process" : "5.1.5",
 		"react/event-loop" : "1.1.1",
 		"react/http" : "1.1.0",
-		"guzzlehttp/guzzle" : "7.0.1"
+		"guzzlehttp/guzzle" : "7.4.5"
 	},
 	"autoload" : {
 		"psr-0" : {
